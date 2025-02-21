@@ -5,17 +5,13 @@ cmake_policy(SET CMP0091 NEW)
 set(TARGET SortingAlgorithmVisualizer)
 project(${TARGET} VERSION 1.0 LANGUAGES CXX)
 
-option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 
 add_executable(${TARGET})
 target_sources(${TARGET} PRIVATE
   src/SortingAlgorithmVisualizer.cpp
 )
 
-
-if(NOT ${BUILD_SHARED_LIBS})
-  target_link_libraries(${TARGET} PRIVATE -static)
-endif()
 
 if(${BUILD_SHARED_LIBS})
   set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
@@ -24,11 +20,17 @@ else()
 endif()
 
 
-find_package(Threads REQUIRED)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  target_link_options(${TARGET} PUBLIC
+    /NOIMPLIB
+    /NOEXP
+  )
+else()
+  target_compile_options(${TARGET} PUBLIC -m64)
+  target_link_options(${TARGET} PUBLIC -m64)
 
-target_link_libraries(${TARGET} PUBLIC
-  Threads::Threads
-)
+endif()
+
 
 if(${BUILD_SHARED_LIBS})
   if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -51,3 +53,16 @@ else()
   endif()
 
 endif()
+
+
+find_package(Threads REQUIRED)
+
+target_link_libraries(${TARGET} PUBLIC
+  Threads::Threads
+)
+
+
+include(GNUInstallDirs)
+target_include_directories(${TARGET} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/${CMAKE_INSTALL_INCLUDEDIR}>
+)

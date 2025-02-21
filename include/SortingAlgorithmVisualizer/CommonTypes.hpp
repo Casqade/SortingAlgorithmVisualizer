@@ -20,6 +20,8 @@ struct RandomizeTask
 
   void* data {};
   size_t elementCount {};
+
+  std::mutex* dataMutex {};
 };
 
 

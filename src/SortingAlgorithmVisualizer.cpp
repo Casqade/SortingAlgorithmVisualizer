@@ -2,7 +2,6 @@
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/MockSorter.hpp>
 
-#include <vector>
 #include <thread>
 #include <condition_variable>
 
@@ -108,12 +107,14 @@ randomizerThreadProc(
 
     if ( task != nullptr )
     {
-      task->callback(task->data, task->elementCount);
+      {
+        std::lock_guard <std::mutex> lock (*task->dataMutex);
+        task->callback(task->data, task->elementCount);
+      }
 
       {
-        std::unique_lock <std::mutex> lock (task->taskFinishedMutex);
+        std::lock_guard <std::mutex> lock (task->taskFinishedMutex);
         task->callback = nullptr; // mark task as done
-        lock.unlock();
       }
 
       task->taskFinishedSignal.notify_one();
@@ -131,9 +132,6 @@ main()
 
   ThreadSharedData sharedState {};
 
-  std::vector <ThreadLocalData> threadData (
-    plotCount, {sharedState} );
-
   PlotData <int> testData {};
   testData.init(1000);
 
@@ -146,25 +144,48 @@ main()
     testData1[i] = i;
   }
 
-  threadData[0].sorter = new MockSorter <int> (testData);
-  threadData[1].sorter = new MockSorter <int> (testData1);
 
-  std::vector <std::thread> threads {};
-  threads.reserve(plotCount);
+  ThreadLocalData threadsData[plotCount]
+  {
+    {sharedState, new MockSorter <int> (testData)},
+    {sharedState, new MockSorter <int> (testData1)},
+  };
 
-  threads.emplace_back(sorterThreadProc, &threadData[0]);
-  threads.emplace_back(sorterThreadProc, &threadData[1]);
+  std::thread sorterThreads[plotCount] {};
+
+  for ( size_t i {}; i < plotCount; ++i )
+    sorterThreads[i] = std::thread{sorterThreadProc, &threadsData[i]};
+
 
   auto randomizerThread = std::thread(
     randomizerThreadProc, &sharedState );
 
 
+  for ( size_t frame {}; frame < 1000; ++frame )
+  {
+    for ( size_t i {}; i < plotCount; ++i )
+    {
+      if ( threadsData[i].sorter->tryReading() == true )
+      {
+//        simulate copying to back buffer
+        std::this_thread::sleep_for(std::chrono::milliseconds{5});
+
+        threadsData[i].sorter->stopReading();
+      }
+    }
+
+//    write to vertex buffer
+//    glVertexAttribDivisor + glDrawArraysInstanced
+//    swap
+  }
+
   std::this_thread::sleep_for(std::chrono::seconds{1});
+
 
   sharedState.shutdownRequested.store(
     true, std::memory_order_relaxed );
 
-  for ( auto&& thread : threads )
+  for ( auto&& thread : sorterThreads )
     thread.join();
 
   sharedState.sorterThreadsAreDead.store(
@@ -179,6 +200,9 @@ main()
   }
 
   randomizerThread.join();
+
+  for ( auto&& threadData : threadsData )
+    delete threadData.sorter;
 
   return 0;
 }

@@ -2,6 +2,8 @@
 
 #include <SortingAlgorithmVisualizer/Sorters/ISorterSpecialized.hpp>
 
+#include <thread>
+
 
 template <typename T>
 class MockSorter : public ISorterSpecialized <T>
@@ -27,6 +29,17 @@ public:
     if ( this->mData == nullptr )
       return true;
 
-    return ++mCounter == this->mData->size();
+
+//    simulate sorting operation
+    const bool isSorted =
+      ++mCounter == this->mData->size();
+
+
+    std::lock_guard <std::mutex> lock (this->mDataMutex);
+
+//    simulate accumulated write operations
+    std::this_thread::sleep_for(std::chrono::milliseconds{1});
+
+    return isSorted;
   }
 };

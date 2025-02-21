@@ -15,6 +15,7 @@ public:
     mRandomizeTask.callback = RandomizePlotData <T>;
     mRandomizeTask.data = mData->data();
     mRandomizeTask.elementCount = mData->size();
+    mRandomizeTask.dataMutex = &mDataMutex;
   }
 
 

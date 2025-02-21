@@ -23,7 +23,6 @@ struct RandomizeTask
 };
 
 
-
 struct ThreadSharedData
 {
   struct

@@ -1,8 +1,10 @@
 #include <SortingAlgorithmVisualizer/Containers.hpp>
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/MockSorter.hpp>
+#include <SortingAlgorithmVisualizer/Allocators/ArenaAllocator.hpp>
 
 #include <thread>
+#include <cassert>
 #include <condition_variable>
 
 
@@ -128,9 +130,17 @@ randomizerThreadProc(
 int
 main()
 {
+  ArenaAllocator arena {};
+  arena.init(1024);
+
   const size_t plotCount = 2;
 
-  ThreadSharedData sharedState {};
+  auto sharedState =
+    ObjectCreate <ThreadSharedData> (arena);
+//    arena.create <ThreadSharedData> ();
+
+  assert(sharedState != nullptr);
+
 
   PlotData <int> testData {};
   testData.init(1000);
@@ -147,8 +157,8 @@ main()
 
   ThreadLocalData threadsData[plotCount]
   {
-    {sharedState, new MockSorter <int> (testData)},
-    {sharedState, new MockSorter <int> (testData1)},
+    {*sharedState, new MockSorter <int> (testData)},
+    {*sharedState, new MockSorter <int> (testData1)},
   };
 
   std::thread sorterThreads[plotCount] {};
@@ -158,7 +168,7 @@ main()
 
 
   auto randomizerThread = std::thread(
-    randomizerThreadProc, &sharedState );
+    randomizerThreadProc, sharedState );
 
 
   for ( size_t frame {}; frame < 1000; ++frame )
@@ -182,27 +192,31 @@ main()
   std::this_thread::sleep_for(std::chrono::seconds{1});
 
 
-  sharedState.shutdownRequested.store(
+  sharedState->shutdownRequested.store(
     true, std::memory_order_relaxed );
 
   for ( auto&& thread : sorterThreads )
     thread.join();
 
-  sharedState.sorterThreadsAreDead.store(
+  sharedState->sorterThreadsAreDead.store(
     true, std::memory_order_relaxed );
 
 
   {
     std::unique_lock <std::mutex> lock (
-      sharedState.randomizer.taskAvailableMutex );
+      sharedState->randomizer.taskAvailableMutex );
 
-    sharedState.randomizer.taskAvailableSignal.notify_one();
+    sharedState->randomizer.taskAvailableSignal.notify_one();
   }
 
   randomizerThread.join();
 
   for ( auto&& threadData : threadsData )
     delete threadData.sorter;
+
+  ObjectDestroy(sharedState);
+
+  arena.deinit();
 
   return 0;
 }

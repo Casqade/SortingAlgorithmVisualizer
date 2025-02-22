@@ -10,6 +10,11 @@ option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 add_executable(${TARGET})
 target_sources(${TARGET} PRIVATE
   src/SortingAlgorithmVisualizer.cpp
+
+  src/Allocators/Alignment.cpp
+  src/Allocators/IAllocator.cpp
+  src/Allocators/ArenaAllocator.cpp
+
   src/ISorter.cpp
 )
 

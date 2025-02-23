@@ -35,7 +35,6 @@ protected:
 
   void* mReservedBlock {};
   size_t mBytesReserved {};
-  size_t mBytesAllocated {};
 };
 
 

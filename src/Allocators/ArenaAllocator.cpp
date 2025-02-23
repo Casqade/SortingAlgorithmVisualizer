@@ -2,6 +2,11 @@
 #include <SortingAlgorithmVisualizer/Allocators/Alignment.hpp>
 
 
+ArenaAllocator::~ArenaAllocator()
+{
+  mBytesAllocated = 0;
+}
+
 void*
 ArenaAllocator::allocate(
   size_t bytes,

@@ -6,7 +6,6 @@
 #include <cassert>
 
 
-
 IAllocator::~IAllocator()
 {
   deinit();
@@ -49,7 +48,6 @@ void
 IAllocator::deinit()
 {
   mBytesReserved = 0;
-  mBytesAllocated = 0;
 
   if ( mReservedBlock == nullptr )
   {

@@ -42,4 +42,9 @@ public:
 
     return isSorted;
   }
+
+  inline size_t instanceSize() const override
+  {
+    return sizeof(*this);
+  }
 };

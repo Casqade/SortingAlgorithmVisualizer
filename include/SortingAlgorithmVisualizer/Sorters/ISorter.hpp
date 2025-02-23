@@ -11,6 +11,8 @@ public:
   ISorter() = default;
   virtual ~ISorter() = default;
 
+  static void Destroy( ISorter* );
+
   virtual bool step() = 0;
   virtual void reset() = 0;
 
@@ -26,4 +28,7 @@ protected:
 
   std::mutex mDataMutex {};
   std::unique_lock <std::mutex> mDataLock {mDataMutex, std::defer_lock};
+
+
+  virtual size_t instanceSize() const = 0;
 };

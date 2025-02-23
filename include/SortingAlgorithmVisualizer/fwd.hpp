@@ -2,3 +2,5 @@
 
 
 class ISorter;
+class IAllocator;
+class ArenaAllocator;

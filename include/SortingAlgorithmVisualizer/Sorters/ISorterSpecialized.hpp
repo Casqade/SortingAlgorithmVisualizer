@@ -9,16 +9,17 @@ template <typename T>
 class ISorterSpecialized : public ISorter
 {
 public:
-  inline ISorterSpecialized( PlotData <T>& data )
-    : mData{&data}
+  inline ISorterSpecialized( Array <T>& values )
+    : mValues{&values}
   {
     mRandomizeTask.callback = RandomizePlotData <T>;
-    mRandomizeTask.data = mData->data();
-    mRandomizeTask.elementCount = mData->size();
+    mRandomizeTask.data = mValues->data();
+    mRandomizeTask.elementCount = mValues->size();
     mRandomizeTask.dataMutex = &mDataMutex;
   }
 
 
 protected:
-  PlotData <T>* mData {};
+  Array <T>* mValues {};
+  Array <T>* mColors {};
 };

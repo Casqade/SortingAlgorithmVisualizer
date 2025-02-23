@@ -55,6 +55,7 @@ sorterThreadProc(
         randomizerData.taskAvailableSignal.notify_one();
       }
 
+//      TOOD: reset plot colors
 
       std::unique_lock <std::mutex> lock (
         newTask.taskFinishedMutex );
@@ -64,8 +65,6 @@ sorterThreadProc(
         {
           return newTask.callback == nullptr;
         });
-
-//      TOOD: reset plot colors
 
       sorter->reset();
     }
@@ -130,23 +129,29 @@ randomizerThreadProc(
 int
 main()
 {
-  ArenaAllocator arena {};
-  arena.init(1024);
-
   const size_t plotCount = 2;
+
+  const auto heapMemoryBudget =
+    sizeof(ThreadSharedData) +
+    sizeof(int) * 1000 * plotCount +
+    sizeof(ThreadLocalData) * plotCount +
+    sizeof(std::thread) * plotCount +
+    sizeof(IAllocator*) * 100; // reserved for alignment padding & allocation bookkeeping
+
+  ArenaAllocator arena {};
+  arena.init(heapMemoryBudget);
 
   auto sharedState =
     ObjectCreate <ThreadSharedData> (arena);
-//    arena.create <ThreadSharedData> ();
 
   assert(sharedState != nullptr);
 
 
-  PlotData <int> testData {};
-  testData.init(1000);
+  Array <int> testData {};
+  testData.init(1000, arena);
 
-  PlotData <int> testData1 {};
-  testData1.init(1000);
+  Array <int> testData1 {};
+  testData1.init(1000, arena);
 
   for ( size_t i {}; i < 1000; ++i )
   {
@@ -155,16 +160,24 @@ main()
   }
 
 
-  ThreadLocalData threadsData[plotCount]
-  {
-    {*sharedState, new MockSorter <int> (testData)},
-    {*sharedState, new MockSorter <int> (testData1)},
-  };
+  Array <ThreadLocalData> threadsData {};
 
-  std::thread sorterThreads[plotCount] {};
+  threadsData.init(plotCount, arena, {*sharedState});
+
+  threadsData[0].sorter =
+    ObjectCreate <MockSorter <int>> (arena, 1, testData);
+
+  threadsData[1].sorter =
+    ObjectCreate <MockSorter <int>> (arena, 1, testData1);
+
+
+  Array <std::thread> sorterThreads {};
+
+  sorterThreads.init(plotCount, arena);
 
   for ( size_t i {}; i < plotCount; ++i )
-    sorterThreads[i] = std::thread{sorterThreadProc, &threadsData[i]};
+    sorterThreads[i] = std::thread{
+      sorterThreadProc, &threadsData[i] };
 
 
   auto randomizerThread = std::thread(
@@ -211,12 +224,12 @@ main()
 
   randomizerThread.join();
 
+
   for ( auto&& threadData : threadsData )
-    delete threadData.sorter;
+    ISorter::Destroy(threadData.sorter);
 
   ObjectDestroy(sharedState);
 
-  arena.deinit();
 
   return 0;
 }

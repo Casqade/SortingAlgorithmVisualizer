@@ -12,8 +12,8 @@ class MockSorter : public ISorterSpecialized <T>
 
 
 public:
-  inline MockSorter( PlotData <T>& data )
-    : ISorterSpecialized <T>(data)
+  inline MockSorter( Array <T>& values )
+    : ISorterSpecialized <T>(values)
   {}
 
   ~MockSorter() override = default;
@@ -26,13 +26,13 @@ public:
 
   inline bool step() override
   {
-    if ( this->mData == nullptr )
+    if ( this->mValues == nullptr )
       return true;
 
 
 //    simulate sorting operation
     const bool isSorted =
-      ++mCounter == this->mData->size();
+      ++mCounter == this->mValues->size();
 
 
     std::lock_guard <std::mutex> lock (this->mDataMutex);

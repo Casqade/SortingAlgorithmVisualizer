@@ -1,3 +1,4 @@
+#include <SortingAlgorithmVisualizer/Atomics.hpp>
 #include <SortingAlgorithmVisualizer/Containers.hpp>
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/MockSorter.hpp>
@@ -26,7 +27,7 @@ sorterThreadProc(
 
   bool isSorted {true};
 
-  while ( sharedState.shutdownRequested.load(std::memory_order_relaxed) == false )
+  while ( AtomicLoadRelaxed(sharedState.shutdownRequested) == FALSE )
   {
     if ( isSorted == true )
     {
@@ -42,9 +43,8 @@ sorterThreadProc(
 
       do
       {
-        currentTask = InterlockedCompareExchangePointer(
-          reinterpret_cast <PVOID*> (&randomizerData.task),
-          &newTask, nullptr );
+        currentTask = AtomicPointerCompareExchangeRelease(
+          randomizerData.task, nullptr, &newTask );
 
       } while ( currentTask != nullptr );
 
@@ -90,33 +90,23 @@ randomizerThreadProc(
 
   auto& randomizerData = sharedState->randomizer;
 
-  while ( sharedState->sorterThreadsAreDead.load(std::memory_order_relaxed) == false )
+  while ( AtomicLoadRelaxed(sharedState->sorterThreadsAreDead) == FALSE )
   {
     std::unique_lock <std::mutex> lock (randomizerData.taskAvailableMutex);
 
     randomizerData.taskAvailableSignal.wait( lock,
       [&task = randomizerData.task, &sorterThreadsAreDead = sharedState->sorterThreadsAreDead]
       {
-        auto taskPtr = InterlockedCompareExchangePointer(
-          reinterpret_cast <PVOID*> (&task),
-          nullptr, nullptr );
-
         return
-          taskPtr != nullptr ||
-          sorterThreadsAreDead.load(std::memory_order_relaxed) == true;
+          AtomicPointerLoadRelaxed(task) != nullptr ||
+          AtomicLoadRelaxed(sorterThreadsAreDead) == TRUE;
       } );
 
     lock.unlock();
 
-    auto taskPtr = InterlockedCompareExchangePointer(
-      reinterpret_cast <PVOID*> (&randomizerData.task),
-      nullptr, nullptr );
 
-    InterlockedCompareExchangePointer(
-      reinterpret_cast <PVOID*> (&randomizerData.task),
-      nullptr, taskPtr );
-
-    auto task = static_cast <RandomizeTask*> (taskPtr);
+    auto task = static_cast <RandomizeTask*> (
+      AtomicPointerExchangeAcquire(randomizerData.task, nullptr ) );
 
     if ( task != nullptr )
     {
@@ -215,7 +205,7 @@ main()
   {
     for ( size_t i {}; i < plotCount; ++i )
     {
-      if ( threadsData[i].sorter->tryLockData() == false )
+      if ( threadsData[i].sorter->tryLockData() == FALSE )
         continue;
 
 //      simulate copying to back buffer
@@ -232,14 +222,14 @@ main()
   std::this_thread::sleep_for(std::chrono::seconds{1});
 
 
-  sharedState->shutdownRequested.store(
-    true, std::memory_order_relaxed );
+  AtomicStoreRelaxed(
+    sharedState->shutdownRequested, TRUE );
 
   for ( auto&& thread : sorterThreads )
     thread.join();
 
-  sharedState->sorterThreadsAreDead.store(
-    true, std::memory_order_relaxed );
+  AtomicStoreRelaxed(
+    sharedState->sorterThreadsAreDead, TRUE );
 
 
   {

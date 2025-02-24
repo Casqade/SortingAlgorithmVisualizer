@@ -16,7 +16,7 @@ public:
   virtual bool step() = 0;
   virtual void reset() = 0;
 
-  bool tryLockData();
+  BOOL tryLockData();
   void lockData();
   void unlockData();
 

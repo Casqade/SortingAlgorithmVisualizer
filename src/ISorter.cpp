@@ -26,7 +26,7 @@ ISorter::Destroy(
   allocator->deallocate(sorter);
 }
 
-bool
+BOOL
 ISorter::tryLockData()
 {
   return TryEnterCriticalSection(&mDataGuard);

@@ -5,7 +5,6 @@
 #include <windows.h>
 
 #include <mutex>
-#include <atomic>
 #include <condition_variable>
 
 
@@ -37,8 +36,8 @@ struct ThreadSharedData
 
   } randomizer {};
 
-  std::atomic_bool shutdownRequested {};
-  std::atomic_bool sorterThreadsAreDead {};
+  LONG shutdownRequested {};
+  LONG sorterThreadsAreDead {};
 };
 
 

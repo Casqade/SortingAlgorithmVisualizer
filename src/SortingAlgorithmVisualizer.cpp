@@ -6,7 +6,6 @@
 
 #include <thread>
 #include <cassert>
-#include <condition_variable>
 
 
 const auto SortingStepPresentTime =
@@ -49,24 +48,23 @@ sorterThreadProc(
       } while ( currentTask != nullptr );
 
 
-      {
-        std::unique_lock <std::mutex> lock {
-          randomizerData.taskAvailableMutex };
-
-        lock.unlock();
-        randomizerData.taskAvailableSignal.notify_one();
-      }
+      EnterCriticalSection(&randomizerData.taskAvailableGuard);
+      LeaveCriticalSection(&randomizerData.taskAvailableGuard);
+      WakeConditionVariable(&randomizerData.taskAvailable);
 
 //      TOOD: reset plot colors
 
-      std::unique_lock <std::mutex> lock (
-        newTask.taskFinishedMutex );
+      EnterCriticalSection(&newTask.taskFinishedGuard);
 
-      newTask.taskFinishedSignal.wait( lock,
-        [&newTask]
-        {
-          return newTask.callback == nullptr;
-        });
+      while ( newTask.callback != nullptr )
+      {
+        SleepConditionVariableCS(
+          &newTask.taskFinished,
+          &newTask.taskFinishedGuard,
+          INFINITE ) != 0;
+      }
+
+      LeaveCriticalSection(&newTask.taskFinishedGuard);
 
       sorter->reset();
     }
@@ -92,17 +90,18 @@ randomizerThreadProc(
 
   while ( AtomicLoadRelaxed(sharedState->sorterThreadsAreDead) == FALSE )
   {
-    std::unique_lock <std::mutex> lock (randomizerData.taskAvailableMutex);
+    EnterCriticalSection(&randomizerData.taskAvailableGuard);
 
-    randomizerData.taskAvailableSignal.wait( lock,
-      [&task = randomizerData.task, &sorterThreadsAreDead = sharedState->sorterThreadsAreDead]
-      {
-        return
-          AtomicPointerLoadRelaxed(task) != nullptr ||
-          AtomicLoadRelaxed(sorterThreadsAreDead) == TRUE;
-      } );
+    while ( AtomicPointerLoadRelaxed(randomizerData.task) == nullptr &&
+            AtomicLoadRelaxed(sharedState->sorterThreadsAreDead) == FALSE )
+    {
+      SleepConditionVariableCS(
+        &randomizerData.taskAvailable,
+        &randomizerData.taskAvailableGuard,
+        INFINITE ) != 0;
+    }
 
-    lock.unlock();
+    LeaveCriticalSection(&randomizerData.taskAvailableGuard);
 
 
     auto task = static_cast <RandomizeTask*> (
@@ -115,12 +114,11 @@ randomizerThreadProc(
         task->elementCount,
         *task->dataGuard );
 
-      {
-        std::lock_guard <std::mutex> lock (task->taskFinishedMutex);
+      EnterCriticalSection(&task->taskFinishedGuard);
         task->callback = nullptr; // mark task as done
-      }
+      LeaveCriticalSection(&task->taskFinishedGuard);
 
-      task->taskFinishedSignal.notify_one();
+      WakeConditionVariable(&task->taskFinished);
     }
   }
 
@@ -150,6 +148,9 @@ main()
     ObjectCreate <ThreadSharedData> (arena);
 
   assert(sharedState != nullptr);
+
+  InitializeCriticalSection(&sharedState->randomizer.taskAvailableGuard);
+  InitializeConditionVariable(&sharedState->randomizer.taskAvailable);
 
 
   struct PlotData
@@ -232,12 +233,9 @@ main()
     sharedState->sorterThreadsAreDead, TRUE );
 
 
-  {
-    std::unique_lock <std::mutex> lock (
-      sharedState->randomizer.taskAvailableMutex );
-
-    sharedState->randomizer.taskAvailableSignal.notify_one();
-  }
+  EnterCriticalSection(&sharedState->randomizer.taskAvailableGuard);
+  LeaveCriticalSection(&sharedState->randomizer.taskAvailableGuard);
+  WakeConditionVariable(&sharedState->randomizer.taskAvailable);
 
   randomizerThread.join();
 
@@ -245,6 +243,7 @@ main()
   for ( auto&& threadData : threadsData )
     ISorter::Destroy(threadData.sorter);
 
+  DeleteCriticalSection(&sharedState->randomizer.taskAvailableGuard);
   ObjectDestroy(sharedState);
 
 

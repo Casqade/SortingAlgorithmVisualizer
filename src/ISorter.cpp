@@ -7,6 +7,8 @@
 ISorter::ISorter()
 {
   InitializeCriticalSection(&mDataGuard);
+  InitializeCriticalSection(&mRandomizeTask.taskFinishedGuard);
+  InitializeConditionVariable(&mRandomizeTask.taskFinished);
 
   mRandomizeTask.dataGuard = &mDataGuard;
 }
@@ -14,6 +16,7 @@ ISorter::ISorter()
 ISorter::~ISorter()
 {
   DeleteCriticalSection(&mDataGuard);
+  DeleteCriticalSection(&mRandomizeTask.taskFinishedGuard);
 }
 
 void

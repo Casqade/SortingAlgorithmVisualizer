@@ -4,8 +4,7 @@
 
 #include <windows.h>
 
-#include <mutex>
-#include <condition_variable>
+#include <cstdint>
 
 
 using RandomizeFunction =
@@ -14,8 +13,8 @@ using RandomizeFunction =
 
 struct RandomizeTask
 {
-  std::mutex taskFinishedMutex {};
-  std::condition_variable taskFinishedSignal {};
+  CRITICAL_SECTION taskFinishedGuard {};
+  CONDITION_VARIABLE taskFinished {};
 
   RandomizeFunction* callback {};
 
@@ -29,8 +28,8 @@ struct ThreadSharedData
 {
   struct
   {
-    std::mutex taskAvailableMutex {};
-    std::condition_variable taskAvailableSignal {};
+    CRITICAL_SECTION taskAvailableGuard {};
+    CONDITION_VARIABLE taskAvailable {};
 
     RandomizeTask* task {};
 
@@ -45,8 +44,6 @@ struct ThreadLocalData
 {
   ThreadSharedData& sharedState;
   ISorter* sorter {};
-
-  CRITICAL_SECTION dataGuard {};
 };
 
 

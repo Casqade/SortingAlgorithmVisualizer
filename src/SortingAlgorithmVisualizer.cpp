@@ -36,15 +36,17 @@ sorterThreadProc(
 
       auto& randomizerData = sharedState.randomizer;
 
-      RandomizeTask* currentTask {};
+      PVOID currentTask {};
 
       auto& newTask = sorter->getRandomizeTask();
 
-      while ( randomizerData.task.compare_exchange_strong(
-                currentTask, &newTask,
-                std::memory_order_acq_rel,
-                std::memory_order_relaxed ) == false )
-        currentTask = nullptr;
+      do
+      {
+        currentTask = InterlockedCompareExchangePointer(
+          reinterpret_cast <PVOID*> (&randomizerData.task),
+          &newTask, nullptr );
+
+      } while ( currentTask != nullptr );
 
 
       {
@@ -95,23 +97,33 @@ randomizerThreadProc(
     randomizerData.taskAvailableSignal.wait( lock,
       [&task = randomizerData.task, &sorterThreadsAreDead = sharedState->sorterThreadsAreDead]
       {
+        auto taskPtr = InterlockedCompareExchangePointer(
+          reinterpret_cast <PVOID*> (&task),
+          nullptr, nullptr );
+
         return
-          task.load(std::memory_order_relaxed) != nullptr ||
+          taskPtr != nullptr ||
           sorterThreadsAreDead.load(std::memory_order_relaxed) == true;
       } );
 
     lock.unlock();
 
-    auto task = randomizerData.task.load(std::memory_order_acquire);
+    auto taskPtr = InterlockedCompareExchangePointer(
+      reinterpret_cast <PVOID*> (&randomizerData.task),
+      nullptr, nullptr );
 
-    randomizerData.task.store(nullptr, std::memory_order_relaxed);
+    InterlockedCompareExchangePointer(
+      reinterpret_cast <PVOID*> (&randomizerData.task),
+      nullptr, taskPtr );
+
+    auto task = static_cast <RandomizeTask*> (taskPtr);
 
     if ( task != nullptr )
     {
-      {
-        std::lock_guard <std::mutex> lock (*task->dataMutex);
-        task->callback(task->data, task->elementCount);
-      }
+      task->callback(
+        task->data,
+        task->elementCount,
+        *task->dataGuard );
 
       {
         std::lock_guard <std::mutex> lock (task->taskFinishedMutex);
@@ -188,13 +200,13 @@ main()
   {
     for ( size_t i {}; i < plotCount; ++i )
     {
-      if ( threadsData[i].sorter->tryReading() == true )
-      {
-//        simulate copying to back buffer
-        std::this_thread::sleep_for(std::chrono::milliseconds{5});
+      if ( threadsData[i].sorter->tryLockData() == false )
+        continue;
 
-        threadsData[i].sorter->stopReading();
-      }
+//      simulate copying to back buffer
+      std::this_thread::sleep_for(std::chrono::milliseconds{5});
+
+      threadsData[i].sorter->unlockData();
     }
 
 //    write to vertex buffer

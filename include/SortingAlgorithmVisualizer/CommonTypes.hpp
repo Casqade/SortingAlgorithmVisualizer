@@ -2,13 +2,15 @@
 
 #include <SortingAlgorithmVisualizer/fwd.hpp>
 
+#include <windows.h>
+
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
 
 
 using RandomizeFunction =
-  void( void* data, size_t elementCount );
+  void( void* data, size_t elementCount, CRITICAL_SECTION& dataGuard );
 
 
 struct RandomizeTask
@@ -18,10 +20,9 @@ struct RandomizeTask
 
   RandomizeFunction* callback {};
 
+  CRITICAL_SECTION* dataGuard {};
   void* data {};
   size_t elementCount {};
-
-  std::mutex* dataMutex {};
 };
 
 
@@ -32,7 +33,7 @@ struct ThreadSharedData
     std::mutex taskAvailableMutex {};
     std::condition_variable taskAvailableSignal {};
 
-    std::atomic <RandomizeTask*> task {};
+    RandomizeTask* task {};
 
   } randomizer {};
 
@@ -45,4 +46,6 @@ struct ThreadLocalData
 {
   ThreadSharedData& sharedState;
   ISorter* sorter {};
+
+  CRITICAL_SECTION dataGuard {};
 };

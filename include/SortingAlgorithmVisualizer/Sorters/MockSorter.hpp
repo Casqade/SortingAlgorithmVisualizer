@@ -35,10 +35,12 @@ public:
       ++mCounter == this->mValues->size();
 
 
-    std::lock_guard <std::mutex> lock (this->mDataMutex);
+    lockData();
 
 //    simulate accumulated write operations
     std::this_thread::sleep_for(std::chrono::milliseconds{1});
+
+    unlockData();
 
     return isSorted;
   }

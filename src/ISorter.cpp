@@ -1,6 +1,18 @@
 #include <SortingAlgorithmVisualizer/Sorters/ISorter.hpp>
 #include <SortingAlgorithmVisualizer/Allocators/IAllocator.hpp>
 
+#include <windows.h>
+
+
+ISorter::ISorter()
+{
+  InitializeCriticalSection(&mDataGuard);
+}
+
+ISorter::~ISorter()
+{
+  DeleteCriticalSection(&mDataGuard);
+}
 
 void
 ISorter::Destroy(
@@ -15,21 +27,21 @@ ISorter::Destroy(
 }
 
 bool
-ISorter::tryReading()
+ISorter::tryLockData()
 {
-  return mDataLock.try_lock();
+  return TryEnterCriticalSection(&mDataGuard);
 }
 
 void
-ISorter::startReading()
+ISorter::lockData()
 {
-  mDataLock.lock();
+  EnterCriticalSection(&mDataGuard);
 }
 
 void
-ISorter::stopReading()
+ISorter::unlockData()
 {
-  mDataLock.unlock();
+  LeaveCriticalSection(&mDataGuard);
 }
 
 RandomizeTask&

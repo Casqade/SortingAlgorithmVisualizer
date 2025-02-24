@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SortingAlgorithmVisualizer/Containers.hpp>
+#include <SortingAlgorithmVisualizer/CommonTypes.hpp>
 #include <SortingAlgorithmVisualizer/Randomization.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/ISorter.hpp>
 
@@ -15,7 +16,7 @@ public:
     mRandomizeTask.callback = RandomizePlotData <T>;
     mRandomizeTask.data = mValues->data();
     mRandomizeTask.elementCount = mValues->size();
-    mRandomizeTask.dataMutex = &mDataMutex;
+    mRandomizeTask.dataGuard = &mDataGuard;
   }
 
 

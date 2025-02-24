@@ -2,33 +2,32 @@
 
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
 
-#include <mutex>
+#include <windows.h>
 
 
 class ISorter
 {
 public:
-  ISorter() = default;
-  virtual ~ISorter() = default;
+  ISorter();
+  virtual ~ISorter();
 
   static void Destroy( ISorter* );
 
   virtual bool step() = 0;
   virtual void reset() = 0;
 
-  bool tryReading();
-  void startReading();
-  void stopReading();
+  bool tryLockData();
+  void lockData();
+  void unlockData();
 
   RandomizeTask& getRandomizeTask();
 
 
 protected:
-  RandomizeTask mRandomizeTask {};
-
-  std::mutex mDataMutex {};
-  std::unique_lock <std::mutex> mDataLock {mDataMutex, std::defer_lock};
-
-
   virtual size_t instanceSize() const = 0;
+
+
+protected:
+  CRITICAL_SECTION mDataGuard {};
+  RandomizeTask mRandomizeTask {};
 };

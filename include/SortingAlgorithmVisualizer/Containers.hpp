@@ -28,7 +28,7 @@ public:
     deinit();
   }
 
-  inline bool init( size_t elementCount, IAllocator& allocator, const T& defaultValue )
+  [[nodiscard]] inline bool init( size_t elementCount, IAllocator& allocator, const T& defaultValue )
   {
     if ( elementCount == 0 )
       return false;
@@ -47,7 +47,7 @@ public:
   }
 
   template <typename... Args>
-  inline bool init( size_t elementCount, IAllocator& allocator, Args&&... args )
+  [[nodiscard]] inline bool init( size_t elementCount, IAllocator& allocator, Args&&... args )
   {
     if ( elementCount == 0 )
       return false;

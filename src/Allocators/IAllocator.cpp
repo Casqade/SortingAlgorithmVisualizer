@@ -3,8 +3,6 @@
 
 #include <windows.h>
 
-#include <cassert>
-
 
 IAllocator::~IAllocator()
 {
@@ -27,7 +25,7 @@ IAllocator::init(
   else
   {
     auto heap = GetProcessHeap();
-    assert(heap != nullptr);
+    heap != NULL;
 
     if ( heap != nullptr )
       mReservedBlock = HeapAlloc(
@@ -61,10 +59,10 @@ IAllocator::deinit()
   else
   {
     auto heap = GetProcessHeap();
-    assert(heap != nullptr);
+    heap != NULL;
 
     if ( heap != nullptr )
-      HeapFree(heap, 0, mReservedBlock);
+      HeapFree(heap, 0, mReservedBlock) != 0;
   }
 
   mParent = {};

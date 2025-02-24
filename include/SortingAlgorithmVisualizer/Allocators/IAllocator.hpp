@@ -13,7 +13,7 @@ public:
   IAllocator( const IAllocator& ) = delete;
   virtual ~IAllocator();
 
-  bool init( size_t bytes, IAllocator* parent = {} );
+  [[nodiscard]] bool init( size_t bytes, IAllocator* parent = {} );
   void deinit();
 
   virtual void* allocate( size_t bytes, size_t alignment ) = 0;

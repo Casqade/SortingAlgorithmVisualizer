@@ -5,7 +5,6 @@
 #include <SortingAlgorithmVisualizer/Allocators/ArenaAllocator.hpp>
 
 #include <thread>
-#include <cassert>
 
 
 const auto SortingStepPresentTime =
@@ -147,7 +146,7 @@ main()
   auto sharedState =
     ObjectCreate <ThreadSharedData> (arena);
 
-  assert(sharedState != nullptr);
+  sharedState != nullptr;
 
   InitializeCriticalSection(&sharedState->randomizer.taskAvailableGuard);
   InitializeConditionVariable(&sharedState->randomizer.taskAvailable);

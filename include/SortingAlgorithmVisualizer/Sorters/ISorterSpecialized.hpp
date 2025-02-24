@@ -10,8 +10,9 @@ template <typename T>
 class ISorterSpecialized : public ISorter
 {
 public:
-  inline ISorterSpecialized( Array <T>& values )
+  inline ISorterSpecialized( Array <T>& values, Array <PlotValueColorIndex>& colors )
     : mValues{&values}
+    , mColors{&colors}
   {
     mRandomizeTask.callback = RandomizePlotData <T>;
     mRandomizeTask.data = mValues->data();
@@ -22,5 +23,5 @@ public:
 
 protected:
   Array <T>* mValues {};
-  Array <T>* mColors {};
+  Array <PlotValueColorIndex>* mColors {};
 };

@@ -142,10 +142,13 @@ int
 main()
 {
   const size_t plotCount = 2;
+  const size_t plotValueCount = 1000;
+  using PlotValueType = uint32_t;
 
   const auto heapMemoryBudget =
     sizeof(ThreadSharedData) +
-    sizeof(int) * 1000 * plotCount +
+    sizeof(PlotValueType) * plotValueCount * plotCount +
+    sizeof(PlotValueColorIndex) * plotValueCount * plotCount +
     sizeof(ThreadLocalData) * plotCount +
     sizeof(std::thread) * plotCount +
     sizeof(IAllocator*) * 100; // reserved for alignment padding & allocation bookkeeping
@@ -159,16 +162,22 @@ main()
   assert(sharedState != nullptr);
 
 
-  Array <int> testData {};
-  testData.init(1000, arena);
-
-  Array <int> testData1 {};
-  testData1.init(1000, arena);
-
-  for ( size_t i {}; i < 1000; ++i )
+  struct PlotData
   {
-    testData[i] = i;
-    testData1[i] = i;
+    Array <PlotValueType> values {};
+    Array <PlotValueColorIndex> colors {};
+  };
+
+  Array <PlotData> plotData {};
+  plotData.init(plotCount, arena);
+
+  for ( auto&& data : plotData )
+  {
+    data.values.init(plotValueCount, arena);
+    data.colors.init(plotValueCount, arena);
+
+    for ( size_t i {}; i < plotValueCount; ++i )
+      data.values[i] = i;
   }
 
 
@@ -177,10 +186,16 @@ main()
   threadsData.init(plotCount, arena, {*sharedState});
 
   threadsData[0].sorter =
-    ObjectCreate <MockSorter <int>> (arena, testData);
+    ObjectCreate <MockSorter <PlotValueType>> (
+      arena,
+      plotData[0].values,
+      plotData[0].colors );
 
   threadsData[1].sorter =
-    ObjectCreate <MockSorter <int>> (arena, testData1);
+    ObjectCreate <MockSorter <PlotValueType>> (
+      arena,
+      plotData[1].values,
+      plotData[1].colors );
 
 
   Array <std::thread> sorterThreads {};

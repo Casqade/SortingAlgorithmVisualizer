@@ -49,3 +49,12 @@ struct ThreadLocalData
 
   CRITICAL_SECTION dataGuard {};
 };
+
+
+enum class PlotValueColorIndex : uint8_t
+{
+  Unsorted,
+  Sorted,
+
+  MaxColors,
+};

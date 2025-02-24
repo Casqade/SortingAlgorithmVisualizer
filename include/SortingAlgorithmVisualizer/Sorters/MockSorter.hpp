@@ -12,8 +12,8 @@ class MockSorter : public ISorterSpecialized <T>
 
 
 public:
-  inline MockSorter( Array <T>& values )
-    : ISorterSpecialized <T>(values)
+  inline MockSorter( Array <T>& values, Array <PlotValueColorIndex>& colors )
+    : ISorterSpecialized <T> (values, colors)
   {}
 
   ~MockSorter() override = default;

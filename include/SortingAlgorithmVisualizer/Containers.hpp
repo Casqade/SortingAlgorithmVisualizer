@@ -34,7 +34,7 @@ public:
       return false;
 
 
-    mValues = ObjectCreate <T> (
+    mValues = ObjectsCreate <T> (
       allocator, elementCount, defaultValue );
 
     if ( mValues != nullptr )
@@ -53,7 +53,7 @@ public:
       return false;
 
 
-    mValues = ObjectCreate <T> (
+    mValues = ObjectsCreate <T> (
       allocator, elementCount,
       std::forward <T> (args)... );
 
@@ -71,7 +71,7 @@ public:
     if ( mValues == nullptr )
       return;
 
-    ObjectDestroy(mValues, mSize);
+    ObjectsDestroy(mValues, mSize);
 
     mSize = 0;
     mValues = {};

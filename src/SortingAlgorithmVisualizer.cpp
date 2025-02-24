@@ -177,10 +177,10 @@ main()
   threadsData.init(plotCount, arena, {*sharedState});
 
   threadsData[0].sorter =
-    ObjectCreate <MockSorter <int>> (arena, 1, testData);
+    ObjectCreate <MockSorter <int>> (arena, testData);
 
   threadsData[1].sorter =
-    ObjectCreate <MockSorter <int>> (arena, 1, testData1);
+    ObjectCreate <MockSorter <int>> (arena, testData1);
 
 
   Array <std::thread> sorterThreads {};

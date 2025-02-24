@@ -106,9 +106,9 @@ ReadObjectAddress(
 
 template <typename T, typename... Args>
 T*
-ObjectCreate(
+ObjectsCreate(
   IAllocator& allocator,
-  size_t count = 1,
+  size_t count,
   Args&&... args )
 {
   void* storage = allocator.allocate(
@@ -132,25 +132,44 @@ ObjectCreate(
   return objects;
 }
 
-template <typename T, size_t N, typename... Args>
+template <typename T, typename... Args>
 T*
 ObjectCreate(
   IAllocator& allocator,
   Args&&... args )
 {
-  return ObjectCreate <T> (
+  return ObjectsCreate <T> (
+    allocator, 1,
+    std::forward <Args> (args)... );
+}
+
+template <typename T, size_t N, typename... Args>
+T*
+ObjectsCreate(
+  IAllocator& allocator,
+  Args&&... args )
+{
+  return ObjectsCreate <T> (
     allocator, N,
     std::forward <Args> (args)... );
 }
 
 template <typename T>
 void
-ObjectDestroy(
+ObjectsDestroy(
   T* objects,
-  size_t count = 1 )
+  size_t count )
 {
   auto allocator = ReadObjectAddress <IAllocator> (
     reinterpret_cast <uintptr_t> (objects) + sizeof(T) * count );
 
   allocator->destroy(objects, count);
+}
+
+template <typename T>
+void
+ObjectDestroy(
+  T* objects )
+{
+  ObjectsDestroy(objects, 1);
 }

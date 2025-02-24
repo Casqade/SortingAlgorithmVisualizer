@@ -25,6 +25,7 @@ public:
 
 protected:
   virtual size_t instanceSize() const = 0;
+  virtual RandomizeFunction* getRandomizeCallback() const = 0;
 
 
 protected:

@@ -14,10 +14,15 @@ public:
     : mValues{&values}
     , mColors{&colors}
   {
-    mRandomizeTask.callback = RandomizePlotData <T>;
     mRandomizeTask.data = mValues->data();
     mRandomizeTask.elementCount = mValues->size();
-    mRandomizeTask.dataGuard = &mDataGuard;
+  }
+
+
+protected:
+  inline RandomizeFunction* getRandomizeCallback() const override
+  {
+    return RandomizePlotData <T>;
   }
 
 

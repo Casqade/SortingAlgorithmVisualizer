@@ -7,6 +7,8 @@
 ISorter::ISorter()
 {
   InitializeCriticalSection(&mDataGuard);
+
+  mRandomizeTask.dataGuard = &mDataGuard;
 }
 
 ISorter::~ISorter()
@@ -47,5 +49,6 @@ ISorter::unlockData()
 RandomizeTask&
 ISorter::getRandomizeTask()
 {
+  mRandomizeTask.callback = getRandomizeCallback();
   return mRandomizeTask;
 }

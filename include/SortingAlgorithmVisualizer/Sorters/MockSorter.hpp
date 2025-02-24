@@ -30,15 +30,18 @@ public:
       return true;
 
 
+    auto& values = *this->mValues;
+
 //    simulate sorting operation
     const bool isSorted =
-      ++mCounter == this->mValues->size();
+      ++mCounter == values.size();
 
 
     lockData();
 
 //    simulate accumulated write operations
     std::this_thread::sleep_for(std::chrono::milliseconds{1});
+    std::swap( values[0], values[mCounter - 1] );
 
     unlockData();
 

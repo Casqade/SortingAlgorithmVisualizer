@@ -19,6 +19,7 @@ main()
     sizeof(PlotValueType) * plotValueCount * plotCount +
     sizeof(PlotValueColorIndex) * plotValueCount * plotCount +
     sizeof(ThreadLocalData) * plotCount +
+    sizeof(MockSorter <PlotValueType>) * plotCount +
     sizeof(ThreadHandle) * plotCount +
     sizeof(IAllocator*) * 100; // reserved for alignment padding & allocation bookkeeping
 

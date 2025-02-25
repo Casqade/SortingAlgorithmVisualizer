@@ -1,9 +1,9 @@
 #pragma once
 
-#include <SortingAlgorithmVisualizer/Containers.hpp>
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
 #include <SortingAlgorithmVisualizer/Randomization.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/ISorter.hpp>
+#include <SortingAlgorithmVisualizer/Containers/Array.hpp>
 
 
 template <typename T>

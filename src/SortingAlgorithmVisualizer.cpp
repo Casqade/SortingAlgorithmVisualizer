@@ -1,5 +1,5 @@
 #include <SortingAlgorithmVisualizer/Atomics.hpp>
-#include <SortingAlgorithmVisualizer/Containers.hpp>
+#include <SortingAlgorithmVisualizer/Containers/Array.hpp>
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/MockSorter.hpp>
 #include <SortingAlgorithmVisualizer/Allocators/ArenaAllocator.hpp>

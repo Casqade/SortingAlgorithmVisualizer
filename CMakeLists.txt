@@ -18,6 +18,7 @@ target_sources(${TARGET} PRIVATE
   src/Containers/RingBuffer.cpp
 
   src/ISorter.cpp
+  src/Randomization.cpp
 )
 
 

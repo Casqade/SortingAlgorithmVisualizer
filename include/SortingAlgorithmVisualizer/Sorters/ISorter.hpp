@@ -32,3 +32,6 @@ protected:
   CRITICAL_SECTION mDataGuard {};
   RandomizeTask mRandomizeTask {};
 };
+
+
+DWORD WINAPI SorterThreadProc( LPVOID data );

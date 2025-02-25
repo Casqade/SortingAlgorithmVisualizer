@@ -26,3 +26,6 @@ RandomizePlotData(
 
   LeaveCriticalSection(&dataGuard);
 }
+
+
+DWORD WINAPI RandomizerThreadProc( LPVOID data );

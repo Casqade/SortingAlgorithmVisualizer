@@ -27,6 +27,60 @@
 #define AtomicStore(x) AtomicStoreSeqCst(x)
 
 
+///
+/// NOTE: Returns pre-incremented value
+///
+
+#define AtomicIncrementSeqCst(x) \
+  InterlockedIncrement(&x)
+
+#define AtomicIncrementAcquire(x) \
+  InterlockedIncrementAcquire(&x)
+
+#define AtomicIncrementRelease(x) \
+  InterlockedIncrementRelease(&x)
+
+#define AtomicIncrementRelaxed(x) \
+  InterlockedIncrementNoFence(&x)
+
+#define AtomicIncrement(x) AtomicIncrementSeqCst(x)
+
+
+///
+/// NOTE: Returns pre-decremented value
+///
+
+#define AtomicDecrementSeqCst(x) \
+  InterlockedDecrement(&x)
+
+#define AtomicDecrementAcquire(x) \
+  InterlockedDecrementAcquire(&x)
+
+#define AtomicDecrementRelease(x) \
+  InterlockedDecrementRelease(&x)
+
+#define AtomicDecrementRelaxed(x) \
+  InterlockedDecrementNoFence(&x)
+
+#define AtomicDecrement(x) AtomicDecrementSeqCst(x)
+
+
+#define AtomicCompareExchangeSeqCst(x, expected, desired) \
+  InterlockedCompareExchange(&x, desired, expected)
+
+#define AtomicCompareExchangeAcquire(x, expected, desired) \
+  InterlockedCompareExchangeAcquire(&x, desired, expected)
+
+#define AtomicCompareExchangeRelease(x, expected, desired) \
+  InterlockedCompareExchangeRelease(&x, desired, expected)
+
+#define AtomicCompareExchangeRelaxed(x, expected, desired) \
+  InterlockedCompareExchangeNoFence(&x, desired, expected)
+
+#define AtomicCompareExchange(x, expected, desired) \
+  AtomicCompareExchangeSeqCst(x, expected, desired)
+
+
 #define AtomicPointerLoadSeqCst(x) \
   InterlockedCompareExchangePointer( \
     reinterpret_cast <PVOID*> (&x), nullptr, nullptr )

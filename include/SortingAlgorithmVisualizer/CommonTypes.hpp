@@ -1,6 +1,8 @@
 #pragma once
 
 #include <SortingAlgorithmVisualizer/fwd.hpp>
+#include <SortingAlgorithmVisualizer/Containers/Array.hpp>
+#include <SortingAlgorithmVisualizer/Containers/RingBuffer.hpp>
 
 #include <windows.h>
 
@@ -28,13 +30,15 @@ struct ThreadSharedData
 {
   struct
   {
-    CRITICAL_SECTION taskAvailableGuard {};
-    CONDITION_VARIABLE taskAvailable {};
+    RingBuffer tasksIndices {};
+    Array <RandomizeTask*> tasks {};
 
-    RandomizeTask* task {};
+    CRITICAL_SECTION tasksAvailableGuard {};
+    CONDITION_VARIABLE tasksAvailable {};
 
   } randomizer {};
 
+  alignas(CacheLineSize)
   LONG shutdownRequested {};
   LONG sorterThreadsAreDead {};
 };

@@ -38,17 +38,20 @@ SorterThreadProc(
 
       auto& newTask = sorter->getRandomizeTask();
 
-      do
-      {
-        currentTask = AtomicPointerCompareExchangeRelease(
-          randomizerData.task, nullptr, &newTask );
 
-      } while ( currentTask != nullptr );
+      auto writeIndex =
+        randomizerData.tasksIndices.acquireWriteIndex();
+
+      auto taskIndex = writeIndex % randomizerData.tasks.size();
+
+      randomizerData.tasks[taskIndex] = &newTask;
+
+      randomizerData.tasksIndices.commitWrittenIndex(writeIndex);
 
 
-      EnterCriticalSection(&randomizerData.taskAvailableGuard);
-      LeaveCriticalSection(&randomizerData.taskAvailableGuard);
-      WakeConditionVariable(&randomizerData.taskAvailable);
+      EnterCriticalSection(&randomizerData.tasksAvailableGuard);
+      LeaveCriticalSection(&randomizerData.tasksAvailableGuard);
+      WakeConditionVariable(&randomizerData.tasksAvailable);
 
 //      TOOD: reset plot colors
 
@@ -56,10 +59,12 @@ SorterThreadProc(
 
       while ( newTask.callback != nullptr )
       {
-        SleepConditionVariableCS(
+        auto resultCode = SleepConditionVariableCS(
           &newTask.taskFinished,
           &newTask.taskFinishedGuard,
-          INFINITE ) != 0;
+          INFINITE );
+
+          resultCode != 0;
       }
 
       LeaveCriticalSection(&newTask.taskFinishedGuard);
@@ -85,22 +90,31 @@ RandomizerThreadProc(
 
   while ( AtomicLoadRelaxed(sharedState->sorterThreadsAreDead) == FALSE )
   {
-    EnterCriticalSection(&randomizerData.taskAvailableGuard);
+    EnterCriticalSection(&randomizerData.tasksAvailableGuard);
 
-    while ( AtomicPointerLoadRelaxed(randomizerData.task) == nullptr &&
+    while ( randomizerData.tasksIndices.canAcquireReadIndex() == false &&
             AtomicLoadRelaxed(sharedState->sorterThreadsAreDead) == FALSE )
     {
-      SleepConditionVariableCS(
-        &randomizerData.taskAvailable,
-        &randomizerData.taskAvailableGuard,
-        INFINITE ) != 0;
+      auto resultCode = SleepConditionVariableCS(
+        &randomizerData.tasksAvailable,
+        &randomizerData.tasksAvailableGuard,
+        INFINITE );
+
+      resultCode != 0;
     }
 
-    LeaveCriticalSection(&randomizerData.taskAvailableGuard);
+    LeaveCriticalSection(&randomizerData.tasksAvailableGuard);
+
+    if ( randomizerData.tasksIndices.canAcquireReadIndex() == false )
+      continue;
 
 
-    auto task = static_cast <RandomizeTask*> (
-      AtomicPointerExchangeAcquire(randomizerData.task, nullptr ) );
+    auto readIndex =
+      randomizerData.tasksIndices.acquireReadIndex();
+
+    auto taskIndex = readIndex % randomizerData.tasks.size();
+
+    auto task = randomizerData.tasks[taskIndex];
 
     if ( task != nullptr )
     {
@@ -131,6 +145,7 @@ main()
 
   const auto heapMemoryBudget =
     sizeof(ThreadSharedData) +
+    sizeof(RandomizeTask*) * plotCount +
     sizeof(PlotValueType) * plotValueCount * plotCount +
     sizeof(PlotValueColorIndex) * plotValueCount * plotCount +
     sizeof(ThreadLocalData) * plotCount +
@@ -145,8 +160,11 @@ main()
 
   sharedState != nullptr;
 
-  InitializeCriticalSection(&sharedState->randomizer.taskAvailableGuard);
-  InitializeConditionVariable(&sharedState->randomizer.taskAvailable);
+  InitializeCriticalSection(&sharedState->randomizer.tasksAvailableGuard);
+  InitializeConditionVariable(&sharedState->randomizer.tasksAvailable);
+
+
+  sharedState->randomizer.tasks.init(plotCount, arena);
 
 
   struct PlotData
@@ -249,9 +267,9 @@ main()
   AtomicStoreRelaxed(
     sharedState->sorterThreadsAreDead, TRUE );
 
-  EnterCriticalSection(&sharedState->randomizer.taskAvailableGuard);
-  LeaveCriticalSection(&sharedState->randomizer.taskAvailableGuard);
-  WakeConditionVariable(&sharedState->randomizer.taskAvailable);
+  EnterCriticalSection(&sharedState->randomizer.tasksAvailableGuard);
+  LeaveCriticalSection(&sharedState->randomizer.tasksAvailableGuard);
+  WakeConditionVariable(&sharedState->randomizer.tasksAvailable);
 
   WaitForSingleObject(
     randomizerThread, INFINITE ) != WAIT_FAILED;
@@ -267,7 +285,7 @@ main()
   for ( auto&& threadData : threadsData )
     ISorter::Destroy(threadData.sorter);
 
-  DeleteCriticalSection(&sharedState->randomizer.taskAvailableGuard);
+  DeleteCriticalSection(&sharedState->randomizer.tasksAvailableGuard);
   ObjectDestroy(sharedState);
 
 

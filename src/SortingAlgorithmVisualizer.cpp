@@ -4,18 +4,18 @@
 #include <SortingAlgorithmVisualizer/Sorters/MockSorter.hpp>
 #include <SortingAlgorithmVisualizer/Allocators/ArenaAllocator.hpp>
 
-#include <thread>
 
 
 const auto SortingStepPresentTime =
-  std::chrono::milliseconds{30};
+  30;
 
 const auto SortedResultPresentTime =
-  std::chrono::seconds{3};
+  3000;
 
-int32_t
-sorterThreadProc(
-  void* data )
+
+DWORD WINAPI
+SorterThreadProc(
+  LPVOID data )
 {
   auto threadData = static_cast <ThreadLocalData*> (data);
 
@@ -29,8 +29,7 @@ sorterThreadProc(
   {
     if ( isSorted == true )
     {
-      std::this_thread::sleep_for(
-        SortedResultPresentTime );
+      Sleep(SortedResultPresentTime);
 
 
       auto& randomizerData = sharedState.randomizer;
@@ -68,10 +67,7 @@ sorterThreadProc(
       sorter->reset();
     }
     else
-    {
-      std::this_thread::sleep_for(
-        SortingStepPresentTime );
-    }
+      Sleep(SortingStepPresentTime);
 
     isSorted = sorter->step();
   }
@@ -79,9 +75,9 @@ sorterThreadProc(
   return 0;
 }
 
-int32_t
-randomizerThreadProc(
-  void* data )
+DWORD WINAPI
+RandomizerThreadProc(
+  LPVOID data )
 {
   auto sharedState = static_cast <ThreadSharedData*> (data);
 
@@ -131,13 +127,14 @@ main()
   const size_t plotCount = 2;
   const size_t plotValueCount = 1000;
   using PlotValueType = uint32_t;
+  using ThreadHandle = HANDLE;
 
   const auto heapMemoryBudget =
     sizeof(ThreadSharedData) +
     sizeof(PlotValueType) * plotValueCount * plotCount +
     sizeof(PlotValueColorIndex) * plotValueCount * plotCount +
     sizeof(ThreadLocalData) * plotCount +
-    sizeof(std::thread) * plotCount +
+    sizeof(ThreadHandle) * plotCount +
     sizeof(IAllocator*) * 100; // reserved for alignment padding & allocation bookkeeping
 
   ArenaAllocator arena {};
@@ -188,17 +185,29 @@ main()
       plotData[1].colors );
 
 
-  Array <std::thread> sorterThreads {};
+  Array <ThreadHandle> sorterThreads {};
 
   sorterThreads.init(plotCount, arena);
 
   for ( size_t i {}; i < plotCount; ++i )
-    sorterThreads[i] = std::thread{
-      sorterThreadProc, &threadsData[i] };
+  {
+    sorterThreads[i] = CreateThread(
+      NULL, 0,
+      SorterThreadProc,
+      &threadsData[i],
+      0, 0 );
+
+    sorterThreads[i] != NULL;
+  }
 
 
-  auto randomizerThread = std::thread(
-    randomizerThreadProc, sharedState );
+  auto randomizerThread = CreateThread(
+    NULL, 0,
+    RandomizerThreadProc,
+    sharedState,
+    0, 0 );
+
+  randomizerThread != NULL;
 
 
   for ( size_t frame {}; frame < 1000; ++frame )
@@ -209,7 +218,7 @@ main()
         continue;
 
 //      simulate copying to back buffer
-      std::this_thread::sleep_for(std::chrono::milliseconds{5});
+      Sleep(5);
 
       threadsData[i].sorter->unlockData();
     }
@@ -219,24 +228,40 @@ main()
 //    swap
   }
 
-  std::this_thread::sleep_for(std::chrono::seconds{1});
-
 
   AtomicStoreRelaxed(
     sharedState->shutdownRequested, TRUE );
 
-  for ( auto&& thread : sorterThreads )
-    thread.join();
+  for ( auto&& sorterThread : sorterThreads )
+  {
+    WaitForSingleObject(
+      sorterThread, INFINITE ) != WAIT_FAILED;
+
+    DWORD threadExitCode {};
+
+    GetExitCodeThread(
+      sorterThread, &threadExitCode ) != FALSE;
+
+    threadExitCode != 0;
+  }
+
 
   AtomicStoreRelaxed(
     sharedState->sorterThreadsAreDead, TRUE );
-
 
   EnterCriticalSection(&sharedState->randomizer.taskAvailableGuard);
   LeaveCriticalSection(&sharedState->randomizer.taskAvailableGuard);
   WakeConditionVariable(&sharedState->randomizer.taskAvailable);
 
-  randomizerThread.join();
+  WaitForSingleObject(
+    randomizerThread, INFINITE ) != WAIT_FAILED;
+
+  DWORD threadExitCode {};
+
+  GetExitCodeThread(
+    randomizerThread, &threadExitCode ) != FALSE;
+
+  threadExitCode != 0;
 
 
   for ( auto&& threadData : threadsData )

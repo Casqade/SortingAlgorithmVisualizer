@@ -2,8 +2,6 @@
 
 #include <SortingAlgorithmVisualizer/Sorters/ISorterSpecialized.hpp>
 
-#include <thread>
-
 
 template <typename T>
 class MockSorter : public ISorterSpecialized <T>
@@ -40,7 +38,7 @@ public:
     lockData();
 
 //    simulate accumulated write operations
-    std::this_thread::sleep_for(std::chrono::milliseconds{1});
+    Sleep(1);
     std::swap( values[0], values[mCounter - 1] );
 
     unlockData();

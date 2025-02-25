@@ -9,6 +9,9 @@
 #include <cstdint>
 
 
+using ThreadHandle = HANDLE;
+
+
 using RandomizeFunction =
   void( void* data, size_t elementCount, CRITICAL_SECTION& dataGuard );
 
@@ -51,10 +54,20 @@ struct ThreadLocalData
 };
 
 
+using PlotValueType = uint32_t;
+
+
 enum class PlotValueColorIndex : uint8_t
 {
   Unsorted,
   Sorted,
 
   MaxColors,
+};
+
+
+struct PlotData
+{
+  Array <PlotValueType> values {};
+  Array <PlotValueColorIndex> colors {};
 };

@@ -28,4 +28,3 @@ RandomizePlotData(
 }
 
 
-DWORD WINAPI RandomizerThreadProc( LPVOID data );

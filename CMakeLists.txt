@@ -9,13 +9,16 @@ option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 
 add_executable(${TARGET})
 target_sources(${TARGET} PRIVATE
-  src/SortingAlgorithmVisualizer.cpp
+  src/main.cpp
 
   src/Allocators/Alignment.cpp
   src/Allocators/IAllocator.cpp
   src/Allocators/ArenaAllocator.cpp
 
   src/Containers/RingBuffer.cpp
+
+  src/Backend.cpp
+  src/Backend_threads.cpp
 
   src/ISorter.cpp
   src/Randomization.cpp

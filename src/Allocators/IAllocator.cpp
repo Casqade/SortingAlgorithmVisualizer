@@ -25,11 +25,17 @@ IAllocator::init(
   else
   {
     auto heap = GetProcessHeap();
-    heap != NULL;
 
     if ( heap != nullptr )
       mReservedBlock = HeapAlloc(
         heap, 0, bytes );
+
+    else
+    {
+      MessageBox( NULL,
+        "Failed get process heap",
+        NULL, MB_ICONERROR );
+    }
   }
 
   if ( mReservedBlock != nullptr )
@@ -59,10 +65,19 @@ IAllocator::deinit()
   else
   {
     auto heap = GetProcessHeap();
-    heap != NULL;
 
-    if ( heap != nullptr )
-      HeapFree(heap, 0, mReservedBlock) != FALSE;
+    if ( heap == nullptr )
+    {
+      MessageBox( NULL,
+        "Failed get process heap",
+        NULL, MB_ICONERROR );
+    }
+    else if ( HeapFree(heap, 0, mReservedBlock) == FALSE )
+    {
+      MessageBox( NULL,
+        "Failed to free heap memory block",
+        NULL, MB_ICONERROR );
+    }
   }
 
   mParent = {};

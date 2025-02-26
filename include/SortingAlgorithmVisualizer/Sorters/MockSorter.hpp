@@ -35,13 +35,13 @@ public:
       ++mCounter == values.size();
 
 
-    lockData();
+    this->lockData();
 
 //    simulate accumulated write operations
     Sleep(1);
     std::swap( values[0], values[mCounter - 1] );
 
-    unlockData();
+    this->unlockData();
 
     return isSorted;
   }

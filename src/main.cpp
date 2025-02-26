@@ -6,30 +6,67 @@
 #include <SortingAlgorithmVisualizer/Allocators/ArenaAllocator.hpp>
 
 
+bool ProgramShouldAbort {};
+
+
 int
 main()
 {
   const size_t plotCount = 2;
   const size_t plotValueCount = 1000;
-  using ThreadHandle = HANDLE;
 
-  const auto heapMemoryBudget1 =
-    sizeof(Backend) +
-    sizeof(RandomizeTask*) * plotCount +
-    sizeof(PlotData) * plotCount +
+  const size_t callbackStackDepth = 1;
+
+  const auto heapMemoryBudget =
+    sizeof(CallbackTask) * callbackStackDepth +
+    Backend::HeapMemoryBudget(plotCount) +
     sizeof(PlotValueType) * plotValueCount * plotCount +
     sizeof(PlotValueColorIndex) * plotValueCount * plotCount +
-    sizeof(ThreadLocalData) * plotCount +
-    sizeof(ThreadHandle) * plotCount +
     sizeof(MockSorter <PlotValueType>) * plotCount +
     sizeof(IAllocator*) * 100; // reserved for alignment padding & allocation bookkeeping
 
 
   ArenaAllocator arena {};
-  arena.init(heapMemoryBudget1);
+  if ( arena.init(heapMemoryBudget) == false )
+  {
+    MessageBox( NULL,
+      "Failed to allocate enough heap memory",
+      NULL, MB_ICONERROR );
+
+    return 0;
+  }
+
+
+  CallbackStack deinitStack {};
+
+  if ( deinitStack.init(callbackStackDepth, arena) == false )
+  {
+    MessageBox( NULL,
+      "Failed to initialize WinMain deinit stack",
+      NULL, MB_ICONERROR );
+
+    return 0;
+  }
+
 
   auto backend = ObjectCreate <Backend> (arena, arena);
-  backend != nullptr;
+
+  if ( backend == nullptr )
+  {
+    MessageBox( NULL,
+      "Failed to allocate memory for Backend",
+      NULL, MB_ICONERROR );
+
+    return 0;
+  }
+
+  deinitStack.push( backend,
+  [] ( void* data )
+  {
+    ObjectDestroy(
+      static_cast <Backend*> (data) );
+  } );
+
 
   backend->init(plotCount);
 
@@ -45,6 +82,10 @@ main()
 
   for ( size_t frame {}; frame < 1000; ++frame )
   {
+    if ( ProgramShouldAbort == true )
+      break;
+
+
     for ( size_t i {}; i < plotCount; ++i )
     {
       auto sorter = backend->sorter(i);
@@ -63,10 +104,7 @@ main()
 //    swap
   }
 
-
   backend->stop();
-
-  backend->deinit();
 
 
   return 0;

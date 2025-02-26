@@ -15,6 +15,7 @@ target_sources(${TARGET} PRIVATE
   src/Allocators/IAllocator.cpp
   src/Allocators/ArenaAllocator.cpp
 
+  src/Containers/CallbackStack.cpp
   src/Containers/RingBuffer.cpp
 
   src/Backend.cpp

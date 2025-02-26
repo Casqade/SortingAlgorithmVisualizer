@@ -2,6 +2,10 @@
 
 #include <SortingAlgorithmVisualizer/fwd.hpp>
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
+#include <SortingAlgorithmVisualizer/Sorters/ISorter.hpp>
+#include <SortingAlgorithmVisualizer/Containers/CallbackStack.hpp>
+
+#include <cassert>
 
 
 DWORD WINAPI SorterThreadProc( LPVOID data );
@@ -12,6 +16,7 @@ class Backend
 {
 public:
   Backend( IAllocator& );
+  ~Backend();
 
   Backend( Backend&& ) = delete;
   Backend( const Backend& ) = delete;
@@ -32,9 +37,8 @@ public:
   PlotData* plotData( size_t plotIndex ) const;
 
 
-private:
-  void initSharedState();
-  void initThreadData();
+  static size_t CallbackStackDepth( size_t plotCount );
+  static size_t HeapMemoryBudget( size_t plotCount );
 
 
 private:
@@ -47,6 +51,8 @@ private:
   ThreadHandle mRandomizerThread {};
 
   ThreadSharedData mSharedState {};
+
+  CallbackStack mDeinitStack {};
 };
 
 
@@ -55,14 +61,36 @@ inline void
 Backend::initSorter(
   size_t plotIndex )
 {
-  plotIndex < mPlotData.size();
-  plotIndex < mThreadsData.size();
+  if ( ProgramShouldAbort == true )
+    return;
 
-  mThreadsData[plotIndex].sorter =
+
+  assert(plotIndex < mPlotData.size());
+  assert(plotIndex < mThreadsData.size());
+
+
+  auto& sorter = mThreadsData[plotIndex].sorter;
+
+  sorter =
     ObjectCreate <T> (
       mAllocator,
       mPlotData[plotIndex].values,
       mPlotData[plotIndex].colors );
 
-  mThreadsData[plotIndex].sorter != nullptr;
+  if ( sorter == nullptr )
+  {
+    MessageBox( NULL,
+      "Failed to create sorter",
+      NULL, MB_ICONERROR );
+
+    ProgramShouldAbort = true;
+    return;
+  }
+
+  mDeinitStack.push( sorter,
+  [] ( void* data )
+  {
+    ISorter::Destroy(
+      static_cast <ISorter*> (data) );
+  });
 }

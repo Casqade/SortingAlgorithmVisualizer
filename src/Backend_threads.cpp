@@ -2,6 +2,19 @@
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/ISorter.hpp>
 
+#include <cassert>
+
+/* CVAR_NOTE
+
+  Note on SleepConditionVariableCS:
+
+  MSDN doesn't state whether
+  SleepConditionVariableCS failure requires
+  leaving critical section or not,
+  so we have to assert
+
+*/
+
 
 const static auto SortingStepPresentTimeMs = 30;
 const static auto SortedPlotPresentTimeMs = 3000;
@@ -58,7 +71,14 @@ SorterThreadProc(
           &newTask.taskFinishedGuard,
           INFINITE );
 
-          resultCode != 0;
+          if ( resultCode == FALSE )
+          {
+            assert(resultCode != FALSE); // see CVAR_NOTE at the top
+
+            MessageBox( NULL,
+              "SleepConditionVariableCS failure (sorter thread)",
+              NULL, MB_ICONERROR );
+          }
       }
 
       LeaveCriticalSection(&newTask.taskFinishedGuard);
@@ -95,7 +115,14 @@ RandomizerThreadProc(
         &randomizerData.tasksAvailableGuard,
         INFINITE );
 
-      resultCode != 0;
+      if ( resultCode == FALSE )
+      {
+        assert(resultCode != FALSE); // see CVAR_NOTE at the top
+
+        MessageBox( NULL,
+          "SleepConditionVariableCS failure (randomizer thread)",
+          NULL, MB_ICONERROR );
+      }
     }
 
     LeaveCriticalSection(&randomizerData.tasksAvailableGuard);

@@ -62,7 +62,7 @@ IAllocator::deinit()
     heap != NULL;
 
     if ( heap != nullptr )
-      HeapFree(heap, 0, mReservedBlock) != 0;
+      HeapFree(heap, 0, mReservedBlock) != FALSE;
   }
 
   mParent = {};

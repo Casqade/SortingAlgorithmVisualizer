@@ -9,6 +9,9 @@
 #include <cstdint>
 
 
+extern bool ProgramShouldAbort;
+
+
 using ThreadHandle = HANDLE;
 
 

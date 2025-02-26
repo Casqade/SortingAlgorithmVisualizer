@@ -3,6 +3,8 @@
 #include <SortingAlgorithmVisualizer/Sorters/ISorter.hpp>
 #include <SortingAlgorithmVisualizer/Randomization.hpp>
 
+#include <intrin.h>
+
 #include <cassert>
 
 
@@ -140,6 +142,128 @@ Backend::deinit()
 }
 
 void
+Backend::setThreadAffinities()
+{
+  DWORD_PTR processAffinity {};
+  DWORD_PTR systemAffinity {};
+
+  {
+    auto result = GetProcessAffinityMask(
+      GetCurrentProcess(),
+      &processAffinity,
+      &systemAffinity );
+
+    if ( result == FALSE )
+    {
+      MessageBox( NULL,
+        "Failed to get process afinity mask. "
+        "Thread affinities won't be set",
+        NULL, MB_ICONWARNING );
+
+      return;
+    }
+  }
+
+
+  auto nextEvenCoreIndex =
+  [] ( auto& coreIndex, auto& affinityMask ) -> bool
+  {
+    while ( coreIndex % 2 != 0 )
+    {
+      affinityMask &= ~(1 << coreIndex);
+
+      auto hasBit = _BitScanForward64(
+        &coreIndex, affinityMask );
+
+      if ( hasBit == FALSE )
+        return false;
+    }
+
+    return true;
+  };
+
+
+  unsigned long coreIndex {};
+
+  if ( nextEvenCoreIndex(coreIndex, processAffinity) == false )
+  {
+    MessageBox( NULL,
+      "Failed to set threads affinities: "
+      "Process affinity mask is too restrictive or this "
+      "machine has insufficient number of available CPU cores",
+      NULL, MB_ICONWARNING );
+
+    return;
+  }
+
+
+  auto result = SetThreadAffinityMask(
+    GetCurrentThread(),
+    1 << coreIndex );
+
+  if ( result == 0 )
+  {
+    MessageBox( NULL,
+      "Failed to set affinity for main thread",
+      NULL, MB_ICONWARNING );
+  }
+
+  processAffinity &= ~(1 << coreIndex);
+
+
+  if ( nextEvenCoreIndex(coreIndex, processAffinity) == false )
+  {
+    MessageBox( NULL,
+      "Failed to set affinity for randomizer thread: "
+      "Process affinity mask is too restrictive or this "
+      "machine has insufficient number of available CPU cores",
+      NULL, MB_ICONWARNING );
+
+    return;
+  }
+
+  result = SetThreadAffinityMask(
+    mRandomizerThread,
+    1 << coreIndex );
+
+  if ( result == 0 )
+  {
+    MessageBox( NULL,
+      "Failed to set affinity for randomizer thread",
+      NULL, MB_ICONWARNING );
+  }
+
+
+  for ( size_t i {}; i < mSorterThreads.size(); ++i )
+  {
+    processAffinity &= ~(1 << coreIndex);
+
+    if ( nextEvenCoreIndex(coreIndex, processAffinity) == false )
+    {
+      MessageBox( NULL,
+        "Failed to set affinity for sorter thread(s): "
+        "Process affinity mask is too restrictive or this "
+        "machine has insufficient number of available CPU cores",
+        NULL, MB_ICONWARNING );
+
+      return;
+    }
+
+
+    result = SetThreadAffinityMask(
+      mSorterThreads[i],
+      1 << coreIndex );
+
+    if ( result == 0 )
+    {
+      MessageBox( NULL,
+        "Failed to set affinity for sorter thread",
+        NULL, MB_ICONWARNING );
+    }
+  }
+}
+
+void
 Backend::start()
 {
   if ( ProgramShouldAbort == true )
@@ -195,6 +319,8 @@ Backend::start()
       CloseHandle(*static_cast <HANDLE*> (data));
     });
   }
+
+  setThreadAffinities();
 }
 
 void

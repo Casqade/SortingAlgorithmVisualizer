@@ -42,6 +42,10 @@ public:
 
 
 private:
+  void setThreadAffinities();
+
+
+private:
   IAllocator& mAllocator;
 
   Array <PlotData> mPlotData {};

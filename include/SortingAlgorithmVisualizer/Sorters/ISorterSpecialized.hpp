@@ -22,7 +22,7 @@ public:
 protected:
   inline RandomizeFunction* getRandomizeCallback() const override
   {
-    return RandomizePlotData <T>;
+    return RandomizePlotDataShuffle <T>;
   }
 
 

@@ -21,6 +21,7 @@ jobs:
 
       matrix:
         build_type: ["Release"]
+        cmake_generator: ["Ninja"]
         shared_libs_enabled: ["ON", "OFF"]
 
         config:
@@ -55,9 +56,15 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}\build" >> "$GITHUB_OUTPUT"
 
+    - name: Install Ninja
+      run: |
+        choco install ninja
+      shell: bash
+
     - name: Configure CMake
       run: >
         cmake
+        -G ${{ matrix.cmake_generator }}
         -S ${{ github.workspace }}
         -B ${{ steps.strings.outputs.build-output-dir }}
         ${{ matrix.config.cmake-arch-args }}

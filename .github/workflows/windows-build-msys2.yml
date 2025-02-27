@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - '**/README.md'
+      - '.github/workflows/windows-build-clang.yml'
       - '.github/workflows/windows-build-msvc.yml'
 
   pull_request:

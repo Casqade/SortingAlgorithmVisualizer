@@ -1,4 +1,4 @@
-name: Build (Windows MSVC)
+name: Build (Windows Clang)
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
     paths-ignore:
       - '**/README.md'
-      - '.github/workflows/windows-build-clang.yml'
+      - '.github/workflows/windows-build-msvc.yml'
       - '.github/workflows/windows-build-msys2.yml'
 
   pull_request:
@@ -22,13 +22,21 @@ jobs:
 
       matrix:
         build_type: ["Release"]
+        cmake_generator: ["Ninja"]
         shared_libs_enabled: ["ON", "OFF"]
 
         config:
         - {
             os: windows-latest,
-            cc: "cl",
-            cxx: "cl",
+            cc: "clang-cl",
+            cxx: "clang-cl",
+            arch: "x64",
+            cmake-arch-args: ""
+          }
+        - {
+            os: windows-latest,
+            cc: "clang",
+            cxx: "clang++",
             arch: "x64",
             cmake-arch-args: ""
           }
@@ -42,12 +50,20 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}\build" >> "$GITHUB_OUTPUT"
 
+    - name: Install Ninja
+      run: |
+        choco install ninja
+      shell: bash
+
     - name: Configure CMake
       run: >
         cmake
+        -G ${{ matrix.cmake_generator }}
         -S ${{ github.workspace }}
         -B ${{ steps.strings.outputs.build-output-dir }}
         ${{ matrix.config.cmake-arch-args }}
+        -DCMAKE_C_COMPILER=${{ matrix.config.cc }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DBUILD_SHARED_LIBS=${{ matrix.shared_libs_enabled }}
 
@@ -57,13 +73,11 @@ jobs:
         --build ${{ steps.strings.outputs.build-output-dir }}
         --config ${{ matrix.build_type }}
 
-
     - name: Upload Build Artifact
       if: matrix.shared_libs_enabled == 'OFF'
       uses: actions/upload-artifact@v4
       with:
-        name: windows-msvc-${{ matrix.config.arch }}
-        path: '${{ steps.strings.outputs.build-output-dir }}\${{ matrix.build_type }}\'
+        name: windows-(${{ matrix.config.cxx }})-${{ matrix.config.arch }}
+        path: '${{ steps.strings.outputs.build-output-dir }}'
         if-no-files-found: error
         compression-level: 9
-

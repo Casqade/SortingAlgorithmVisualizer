@@ -31,6 +31,20 @@ jobs:
             arch: "x64",
             cmake-arch-args: ""
           }
+        - {
+            os: windows-latest,
+            cc: "clang-cl",
+            cxx: "clang-cl",
+            arch: "x64",
+            cmake-arch-args: ""
+          }
+        - {
+            os: windows-latest,
+            cc: "clang",
+            cxx: "clang++",
+            arch: "x64",
+            cmake-arch-args: ""
+          }
 
     steps:
     - uses: actions/checkout@v4
@@ -61,7 +75,7 @@ jobs:
       if: matrix.shared_libs_enabled == 'OFF'
       uses: actions/upload-artifact@v4
       with:
-        name: windows-msvc-${{ matrix.config.arch }}
+        name: windows-msvc-${{ matrix.config.cxx }}-${{ matrix.config.arch }}
         path: '${{ steps.strings.outputs.build-output-dir }}\${{ matrix.build_type }}\'
         if-no-files-found: error
         compression-level: 9

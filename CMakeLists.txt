@@ -22,6 +22,7 @@ target_sources(${TARGET} PRIVATE
   src/Backend_threads.cpp
 
   src/ISorter.cpp
+  src/TimePoint.cpp
   src/Randomization.cpp
   src/MessageFormatting.cpp
 )

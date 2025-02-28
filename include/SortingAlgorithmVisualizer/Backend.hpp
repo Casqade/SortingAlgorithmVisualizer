@@ -26,16 +26,13 @@ public:
   void init( size_t plotCount );
   void deinit();
 
-  void initData( size_t plotIndex, size_t valueCount );
-
   template <class T>
-  void initSorter( size_t plotIndex );
+  void addSorter( size_t plotIndex, size_t plotValueCount );
 
   void start();
   void stop();
 
   ISorter* sorter( size_t plotIndex ) const;
-  PlotData* plotData( size_t plotIndex ) const;
 
 
   static size_t CallbackStackDepth( size_t plotCount );
@@ -49,7 +46,6 @@ private:
 private:
   IAllocator& mAllocator;
 
-  Array <PlotData> mPlotData {};
   Array <ThreadLocalData> mThreadsData {};
 
   Array <ThreadHandle> mSorterThreads {};
@@ -63,24 +59,19 @@ private:
 
 template <class T>
 inline void
-Backend::initSorter(
-  size_t plotIndex )
+Backend::addSorter(
+  size_t plotIndex,
+  size_t plotValueCount )
 {
   if ( ProgramShouldAbort == true )
     return;
 
-
-  assert(plotIndex < mPlotData.size());
   assert(plotIndex < mThreadsData.size());
 
 
   auto& sorter = mThreadsData[plotIndex].sorter;
 
-  sorter =
-    ObjectCreate <T> (
-      mAllocator,
-      mPlotData[plotIndex].values,
-      mPlotData[plotIndex].colors );
+  sorter = ObjectCreate <T> (mAllocator);
 
   if ( sorter == nullptr )
   {
@@ -101,4 +92,18 @@ Backend::initSorter(
     ISorter::Destroy(
       static_cast <ISorter*> (data) );
   });
+
+
+  if ( sorter->init(plotValueCount, mAllocator) == false )
+  {
+    MessageBox( NULL,
+      FormatUserMessagePassthrough(
+        "Failed to init sorter %1!u!: "
+        "Out of memory budget",
+        plotIndex ),
+      NULL, MB_ICONERROR );
+
+    ProgramShouldAbort = true;
+    return;
+  }
 }

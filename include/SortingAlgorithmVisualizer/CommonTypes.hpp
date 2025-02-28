@@ -57,7 +57,6 @@ struct ThreadLocalData
 };
 
 
-using PlotValueType = uint32_t;
 
 
 enum class PlotValueColorIndex : uint8_t
@@ -68,9 +67,4 @@ enum class PlotValueColorIndex : uint8_t
   MaxColors,
 };
 
-
-struct PlotData
-{
-  Array <PlotValueType> values {};
-  Array <PlotValueColorIndex> colors {};
-};
+using PlotColors = Array <PlotValueColorIndex>;

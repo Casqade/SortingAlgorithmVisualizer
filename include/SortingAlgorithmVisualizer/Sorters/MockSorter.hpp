@@ -10,10 +10,7 @@ class MockSorter : public ISorterSpecialized <T>
 
 
 public:
-  inline MockSorter( Array <T>& values, Array <PlotValueColorIndex>& colors )
-    : ISorterSpecialized <T> (values, colors)
-  {}
-
+  MockSorter() = default;
   ~MockSorter() override = default;
 
 
@@ -24,11 +21,11 @@ public:
 
   inline bool step() override
   {
-    if ( this->mValues == nullptr )
+    if ( this->mValues.size() == 0 )
       return true;
 
 
-    auto& values = *this->mValues;
+    auto& values = this->mValues;
 
 //    simulate sorting operation
     const bool isSorted =

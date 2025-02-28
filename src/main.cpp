@@ -13,6 +13,9 @@ bool ProgramShouldAbort {};
 int
 main()
 {
+  using PlotValueType = uint32_t;
+  using SorterType = MockSorter <PlotValueType>;
+
   const size_t plotCount = 2;
   const size_t plotValueCount = 1000;
 
@@ -20,10 +23,10 @@ main()
 
   const auto heapMemoryBudget =
     sizeof(CallbackTask) * callbackStackDepth +
+    sizeof(Backend) +
     Backend::HeapMemoryBudget(plotCount) +
-    sizeof(PlotValueType) * plotValueCount * plotCount +
-    sizeof(PlotValueColorIndex) * plotValueCount * plotCount +
-    sizeof(MockSorter <PlotValueType>) * plotCount +
+    sizeof(SorterType) * plotCount +
+    SorterType::HeapMemoryBudget(plotValueCount) * plotCount+
     sizeof(IAllocator*) * 100; // reserved for alignment padding & allocation bookkeeping
 
 
@@ -75,15 +78,11 @@ main()
 
   backend->init(plotCount);
 
-
-  for ( size_t i {}; i < plotCount; ++i )
-  {
-    backend->initData(i, plotValueCount);
-    backend->initSorter <MockSorter <PlotValueType>> (i);
-  }
-
+  backend->addSorter <MockSorter <int>> (0, 1000);
+  backend->addSorter <MockSorter <int>> (1, 1000);
 
   backend->start();
+
 
   for ( size_t frame {}; frame < 1000; ++frame )
   {

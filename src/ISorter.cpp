@@ -15,6 +15,8 @@ ISorter::ISorter()
 
 ISorter::~ISorter()
 {
+  mColors.deinit();
+
   DeleteCriticalSection(&mDataGuard);
   DeleteCriticalSection(&mRandomizeTask.taskFinishedGuard);
 }
@@ -29,6 +31,25 @@ ISorter::Destroy(
   sorter->~ISorter();
 
   allocator->deallocate(sorter);
+}
+
+bool
+ISorter::init(
+  size_t valueCount,
+  IAllocator& allocator )
+{
+  if ( mColors.init(valueCount, allocator) == false )
+  {
+    MessageBox( NULL,
+      "Failed to initialize plot colors: "
+      "Out of memory budget",
+      NULL, MB_ICONERROR );
+
+    ProgramShouldAbort = true;
+    return false;
+  }
+
+  return true;
 }
 
 BOOL
@@ -54,4 +75,11 @@ ISorter::getRandomizeTask()
 {
   mRandomizeTask.callback = getRandomizeCallback();
   return mRandomizeTask;
+}
+
+size_t
+ISorter::HeapMemoryBudget(
+  size_t valueCount )
+{
+  return sizeof(PlotValueColorIndex) * valueCount;
 }

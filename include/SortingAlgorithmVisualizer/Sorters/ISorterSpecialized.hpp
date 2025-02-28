@@ -10,12 +10,41 @@ template <typename T>
 class ISorterSpecialized : public ISorter
 {
 public:
-  inline ISorterSpecialized( Array <T>& values, Array <PlotValueColorIndex>& colors )
-    : mValues{&values}
-    , mColors{&colors}
+  ISorterSpecialized() = default;
+
+  inline ~ISorterSpecialized()
   {
-    mRandomizeTask.data = mValues->data();
-    mRandomizeTask.elementCount = mValues->size();
+    mValues.deinit();
+  }
+
+
+  inline bool init( size_t valueCount, IAllocator& allocator ) override
+  {
+    if ( mValues.init(valueCount, allocator) == false )
+    {
+      MessageBox( NULL,
+        "Failed to initialize plot values: "
+        "Out of memory budget",
+        NULL, MB_ICONERROR );
+
+      ProgramShouldAbort = true;
+      return false;
+    }
+
+    for ( size_t i {}; i < valueCount; ++i )
+      mValues[i] = i;
+
+    mRandomizeTask.data = mValues.data();
+    mRandomizeTask.elementCount = valueCount;
+
+    return ISorter::init(valueCount, allocator);
+  }
+
+  inline static size_t HeapMemoryBudget( size_t valueCount )
+  {
+    return
+      sizeof(T) * valueCount +
+      ISorter::HeapMemoryBudget(valueCount);
   }
 
 
@@ -27,6 +56,5 @@ protected:
 
 
 protected:
-  Array <T>* mValues {};
-  Array <PlotValueColorIndex>* mColors {};
+  Array <T> mValues {};
 };

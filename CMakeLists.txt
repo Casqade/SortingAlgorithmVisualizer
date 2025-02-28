@@ -23,6 +23,7 @@ target_sources(${TARGET} PRIVATE
 
   src/ISorter.cpp
   src/Randomization.cpp
+  src/MessageFormatting.cpp
 )
 
 

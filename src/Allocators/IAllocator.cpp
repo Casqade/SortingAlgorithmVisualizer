@@ -1,5 +1,6 @@
 #include <SortingAlgorithmVisualizer/Allocators/IAllocator.hpp>
 #include <SortingAlgorithmVisualizer/Allocators/Alignment.hpp>
+#include <SortingAlgorithmVisualizer/MessageFormatting.hpp>
 
 #include <windows.h>
 
@@ -27,13 +28,16 @@ IAllocator::init(
     auto heap = GetProcessHeap();
 
     if ( heap != nullptr )
+    {
       mReservedBlock = HeapAlloc(
         heap, 0, bytes );
-
+    }
     else
     {
       MessageBox( NULL,
-        "Failed get process heap",
+        FormatUserMessagePassthrough(
+          "Failed get process heap for allocation: %1",
+          FormatSystemMessage() ),
         NULL, MB_ICONERROR );
     }
   }
@@ -69,13 +73,17 @@ IAllocator::deinit()
     if ( heap == nullptr )
     {
       MessageBox( NULL,
-        "Failed get process heap",
+        FormatUserMessagePassthrough(
+          "Failed get process heap for deallocation: %1",
+          FormatSystemMessage() ),
         NULL, MB_ICONERROR );
     }
     else if ( HeapFree(heap, 0, mReservedBlock) == FALSE )
     {
       MessageBox( NULL,
-        "Failed to free heap memory block",
+        FormatUserMessagePassthrough(
+          "Failed to free heap memory block: %1",
+          FormatSystemMessage() ),
         NULL, MB_ICONERROR );
     }
   }

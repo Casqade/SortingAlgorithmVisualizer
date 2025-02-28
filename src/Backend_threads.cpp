@@ -1,6 +1,7 @@
 #include <SortingAlgorithmVisualizer/Atomics.hpp>
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/ISorter.hpp>
+#include <SortingAlgorithmVisualizer/MessageFormatting.hpp>
 
 #include <cassert>
 
@@ -76,7 +77,9 @@ SorterThreadProc(
             assert(resultCode != FALSE); // see CVAR_NOTE at the top
 
             MessageBox( NULL,
-              "SleepConditionVariableCS failure (sorter thread)",
+              FormatUserMessagePassthrough(
+                "SleepConditionVariableCS failure in sorter thread: %1",
+                FormatSystemMessage() ),
               NULL, MB_ICONERROR );
           }
       }
@@ -120,7 +123,9 @@ RandomizerThreadProc(
         assert(resultCode != FALSE); // see CVAR_NOTE at the top
 
         MessageBox( NULL,
-          "SleepConditionVariableCS failure (randomizer thread)",
+          FormatUserMessagePassthrough(
+            "SleepConditionVariableCS failure in randomizer thread: %1",
+            FormatSystemMessage() ),
           NULL, MB_ICONERROR );
       }
     }

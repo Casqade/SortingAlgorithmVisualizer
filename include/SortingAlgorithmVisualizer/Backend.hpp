@@ -2,6 +2,7 @@
 
 #include <SortingAlgorithmVisualizer/fwd.hpp>
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
+#include <SortingAlgorithmVisualizer/MessageFormatting.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/ISorter.hpp>
 #include <SortingAlgorithmVisualizer/Containers/CallbackStack.hpp>
 
@@ -84,7 +85,10 @@ Backend::initSorter(
   if ( sorter == nullptr )
   {
     MessageBox( NULL,
-      "Failed to create sorter",
+      FormatUserMessagePassthrough(
+        "Failed to create sorter %1!u!: "
+        "Out of memory budget",
+        plotIndex ),
       NULL, MB_ICONERROR );
 
     ProgramShouldAbort = true;

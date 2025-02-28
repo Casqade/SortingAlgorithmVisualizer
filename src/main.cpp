@@ -1,6 +1,7 @@
 #include <SortingAlgorithmVisualizer/Atomics.hpp>
 #include <SortingAlgorithmVisualizer/Backend.hpp>
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
+#include <SortingAlgorithmVisualizer/MessageFormatting.hpp>
 #include <SortingAlgorithmVisualizer/Containers/Array.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/MockSorter.hpp>
 #include <SortingAlgorithmVisualizer/Allocators/ArenaAllocator.hpp>
@@ -30,7 +31,9 @@ main()
   if ( arena.init(heapMemoryBudget) == false )
   {
     MessageBox( NULL,
-      "Failed to allocate enough heap memory",
+      FormatUserMessagePassthrough(
+        "Failed to allocate program memory budget of %1!u! bytes",
+        heapMemoryBudget ),
       NULL, MB_ICONERROR );
 
     return 0;
@@ -42,7 +45,8 @@ main()
   if ( deinitStack.init(callbackStackDepth, arena) == false )
   {
     MessageBox( NULL,
-      "Failed to initialize WinMain deinit stack",
+      "Failed to initialize WinMain deinit stack: "
+      "Out of memory budget",
       NULL, MB_ICONERROR );
 
     return 0;
@@ -54,7 +58,8 @@ main()
   if ( backend == nullptr )
   {
     MessageBox( NULL,
-      "Failed to allocate memory for Backend",
+      "Failed to create Backend: "
+      "Out of memory budget",
       NULL, MB_ICONERROR );
 
     return 0;

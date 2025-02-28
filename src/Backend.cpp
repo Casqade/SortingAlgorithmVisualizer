@@ -2,6 +2,7 @@
 #include <SortingAlgorithmVisualizer/Atomics.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/ISorter.hpp>
 #include <SortingAlgorithmVisualizer/Randomization.hpp>
+#include <SortingAlgorithmVisualizer/MessageFormatting.hpp>
 
 #include <intrin.h>
 
@@ -22,7 +23,7 @@ size_t
 Backend::CallbackStackDepth(
   size_t plotCount )
 {
-  return 6 + 4 * plotCount;
+  return 5 + 2 * plotCount;
 }
 
 size_t
@@ -30,10 +31,8 @@ Backend::HeapMemoryBudget(
   size_t plotCount )
 {
   return
-    sizeof(Backend) +
     CallbackStackDepth(plotCount) +
     sizeof(RandomizeTask*) * plotCount +
-    sizeof(PlotData) * plotCount +
     sizeof(ThreadLocalData) * plotCount +
     sizeof(ThreadHandle) * plotCount;
 }
@@ -47,7 +46,8 @@ Backend::init(
   if ( mDeinitStack.init(callbackStackDepth, mAllocator) == false )
   {
     MessageBox( NULL,
-      "Failed to initialize Backend deinit stack",
+      "Failed to initialize Backend deinit stack: "
+      "Out of memory budget",
       NULL, MB_ICONERROR );
 
     ProgramShouldAbort = true;
@@ -68,7 +68,8 @@ Backend::init(
   if ( mSharedState.randomizer.tasks.init(plotCount, mAllocator) == false )
   {
     MessageBox( NULL,
-      "Failed to initialize randomizer tasks",
+      "Failed to initialize storage for randomizer tasks: "
+      "Out of memory budget",
       NULL, MB_ICONERROR );
 
     ProgramShouldAbort = true;
@@ -83,27 +84,11 @@ Backend::init(
   });
 
 
-  if ( mPlotData.init(plotCount, mAllocator) == false )
-  {
-    MessageBox( NULL,
-      "Failed to initialize plot data",
-      NULL, MB_ICONERROR );
-
-    ProgramShouldAbort = true;
-    return;
-  }
-
-  mDeinitStack.push( &mPlotData,
-  [] ( void* data )
-  {
-    static_cast <decltype(mPlotData)*> (data)->deinit();
-  });
-
-
   if ( mThreadsData.init(plotCount, mAllocator, {mSharedState}) == false )
   {
     MessageBox( NULL,
-      "Failed to initialize thread local data",
+      "Failed to initialize thread local data: "
+      "Out of memory budget",
       NULL, MB_ICONERROR );
 
     ProgramShouldAbort = true;
@@ -120,7 +105,8 @@ Backend::init(
   if ( mSorterThreads.init(plotCount, mAllocator) == false )
   {
     MessageBox( NULL,
-      "Failed to initialize sorter threads",
+      "Failed to initialize storage for sorter threads: "
+      "Out of memory budget",
       NULL, MB_ICONERROR );
 
     ProgramShouldAbort = true;
@@ -156,8 +142,10 @@ Backend::setThreadAffinities()
     if ( result == FALSE )
     {
       MessageBox( NULL,
-        "Failed to get process afinity mask. "
-        "Thread affinities won't be set",
+        FormatUserMessagePassthrough(
+          "Thread affinities won't be set. "
+          "Failed to get process afinity mask: %1",
+          FormatSystemMessage() ),
         NULL, MB_ICONWARNING );
 
       return;
@@ -204,7 +192,9 @@ Backend::setThreadAffinities()
   if ( result == 0 )
   {
     MessageBox( NULL,
-      "Failed to set affinity for main thread",
+      FormatUserMessagePassthrough(
+        "Failed to set affinity for main thread: %1",
+        FormatSystemMessage() ),
       NULL, MB_ICONWARNING );
   }
 
@@ -229,7 +219,9 @@ Backend::setThreadAffinities()
   if ( result == 0 )
   {
     MessageBox( NULL,
-      "Failed to set affinity for randomizer thread",
+      FormatUserMessagePassthrough(
+        "Failed to set affinity for randomizer thread: %1",
+        FormatSystemMessage() ),
       NULL, MB_ICONWARNING );
   }
 
@@ -241,9 +233,11 @@ Backend::setThreadAffinities()
     if ( nextEvenCoreIndex(coreIndex, processAffinity) == false )
     {
       MessageBox( NULL,
-        "Failed to set affinity for sorter thread(s): "
-        "Process affinity mask is too restrictive or this "
-        "machine has insufficient number of available CPU cores",
+        FormatUserMessagePassthrough(
+          "Failed to set affinity for sorter %1!u! thread: "
+          "Process affinity mask is too restrictive or this "
+          "machine has insufficient number of available CPU cores",
+          i ),
         NULL, MB_ICONWARNING );
 
       return;
@@ -257,7 +251,9 @@ Backend::setThreadAffinities()
     if ( result == 0 )
     {
       MessageBox( NULL,
-        "Failed to set affinity for sorter thread",
+        FormatUserMessagePassthrough(
+          "Failed to set affinity for sorter %1!u! thread: %2",
+          i, FormatSystemMessage() ),
         NULL, MB_ICONWARNING );
     }
   }
@@ -279,7 +275,9 @@ Backend::start()
   if ( mRandomizerThread == NULL )
   {
     MessageBox( NULL,
-      "Failed to create randomizer thread",
+      FormatUserMessagePassthrough(
+        "Failed to create randomizer thread: %1",
+        FormatSystemMessage() ),
       NULL, MB_ICONERROR );
 
     ProgramShouldAbort = true;
@@ -306,8 +304,10 @@ Backend::start()
     if ( thread == NULL )
     {
       MessageBox( NULL,
-      "Failed to create sorter thread",
-      NULL, MB_ICONERROR );
+        FormatUserMessagePassthrough(
+          "Failed to create sorter %1!u! thread: %2",
+          i, FormatSystemMessage() ),
+        NULL, MB_ICONERROR );
 
       ProgramShouldAbort = true;
       return;
@@ -385,61 +385,6 @@ Backend::stop()
   assert(threadExitCode == 0);
 }
 
-void
-Backend::initData(
-  size_t plotIndex,
-  size_t valueCount )
-{
-  if ( ProgramShouldAbort == true )
-    return;
-
-
-  assert(plotIndex < mPlotData.size());
-
-
-  auto& plotData = mPlotData[plotIndex];
-
-
-  if ( plotData.values.init(valueCount, mAllocator) == false )
-  {
-    MessageBox( NULL,
-      "Failed to initialize plot values",
-      NULL, MB_ICONERROR );
-
-    ProgramShouldAbort = true;
-    return;
-  }
-
-  mDeinitStack.push( &plotData.values,
-  [] ( void* data )
-  {
-    using PlotValues = decltype(plotData.values);
-    static_cast <PlotValues*> (data)->deinit();
-  });
-
-
-  if ( plotData.colors.init(valueCount, mAllocator) == false )
-  {
-    MessageBox( NULL,
-      "Failed to initialize plot colors",
-      NULL, MB_ICONERROR );
-
-    ProgramShouldAbort = true;
-    return;
-  }
-
-  mDeinitStack.push( &plotData.colors,
-  [] ( void* data )
-  {
-    using PlotColors = decltype(plotData.colors);
-    static_cast <PlotColors*> (data)->deinit();
-  });
-
-
-  for ( size_t i {}; i < valueCount; ++i )
-    plotData.values[i] = i;
-}
-
 ISorter*
 Backend::sorter(
   size_t plotIndex ) const
@@ -447,13 +392,4 @@ Backend::sorter(
   assert(plotIndex < mThreadsData.size());
 
   return mThreadsData[plotIndex].sorter;
-}
-
-PlotData*
-Backend::plotData(
-  size_t plotIndex ) const
-{
-  assert(plotIndex < mPlotData.size());
-
-  return &mPlotData[plotIndex];
 }

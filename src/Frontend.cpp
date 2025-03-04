@@ -722,7 +722,7 @@ Frontend::init(
 
     gl.UseProgram(program);
 
-    wglSwapIntervalEXT(0);
+    wglSwapIntervalEXT(1);
 
     wglMakeCurrent(deviceCtx, NULL);
 

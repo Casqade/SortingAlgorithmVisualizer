@@ -20,6 +20,8 @@ public:
   {
     mIndex = 0;
     mSortedIndex = valueCount();
+    mSwappedIndices[0] = 0;
+    mSwappedIndices[1] = 0;
     resetColors();
   }
 
@@ -55,16 +57,16 @@ public:
       colors[rhsIndex] = PlotColor::SwappedGreater;
     }
     else
-      colors[mIndex + 1] = PlotColor::BubbleSortCaret;
+      colors[rhsIndex] = PlotColor::BubbleSortCaret;
 
 
     if ( ++mIndex + 1 == mSortedIndex )
     {
       colors[lhsIndex] = PlotColor::Unsorted;
 
+      mIndex = 0;
       lhsIndex = 0;
       rhsIndex = 0;
-      mIndex = 0;
       --mSortedIndex;
 
       colors[mSortedIndex] = PlotColor::Sorted;

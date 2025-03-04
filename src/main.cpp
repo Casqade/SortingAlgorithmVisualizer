@@ -6,6 +6,7 @@
 #include <SortingAlgorithmVisualizer/Containers/Array.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/MockSorter.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/BubbleSorter.hpp>
+#include <SortingAlgorithmVisualizer/Sorters/CocktailSorter.hpp>
 #include <SortingAlgorithmVisualizer/Allocators/ArenaAllocator.hpp>
 
 
@@ -20,19 +21,22 @@ WinMain(
   LPSTR cmdArgs,
   int windowShowState )
 {
-  const size_t plotCount = 2;
+  const size_t plotCount = 3;
 
   const char* plotTitles[] =
   {
     "Pseudo sort (PLACEHOLDER)",
     "Bubble sort",
+    "Cocktail sort",
   };
 
   using Sorter1Type = MockSorter <float>;
   using Sorter2Type = BubbleSorter <int>;
+  using Sorter3Type = CocktailSorter <int>;
 
-  const size_t plot1ValueCount = 10;
-  const size_t plot2ValueCount = 100;
+  const size_t plot1ValueCount = 20;
+  const size_t plot2ValueCount = 20;
+  const size_t plot3ValueCount = 20;
 
   const size_t callbackStackDepth = 2;
 
@@ -44,8 +48,10 @@ WinMain(
     Frontend::HeapMemoryBudget(plotCount) +
     sizeof(Sorter1Type) +
     sizeof(Sorter2Type) +
+    sizeof(Sorter3Type) +
     Sorter1Type::HeapMemoryBudget(plot1ValueCount) +
     Sorter2Type::HeapMemoryBudget(plot2ValueCount) +
+    Sorter3Type::HeapMemoryBudget(plot2ValueCount) +
 
 //    allocation bookkeeping
     sizeof(IAllocator*) * 9 +
@@ -105,6 +111,7 @@ WinMain(
 
   backend->addSorter <Sorter1Type> (0, plot1ValueCount);
   backend->addSorter <Sorter2Type> (1, plot2ValueCount);
+  backend->addSorter <Sorter3Type> (2, plot3ValueCount);
 
 
   auto frontend = ObjectCreate <Frontend> (arena, arena, *backend);

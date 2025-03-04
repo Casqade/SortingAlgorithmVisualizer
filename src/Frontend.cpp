@@ -526,11 +526,48 @@ Frontend::init(
 
     if ( renderCtx == NULL )
     {
+      auto errorCode = GetLastError();
+      auto errorMessage = FormatSystemMessage(errorCode);
+
+//      Windows may fail to parse OpenGL errors properly:
+//      http://www.gamedev.net/forums/topic/658138-creating-an-opengl-context-on-windows-with-glew/5163081/
+
+      if ( errorMessage == nullptr )
+      {
+        switch (errorCode & 0xFFFF)
+        {
+          case ERROR_INVALID_PROFILE_ARB:
+          {
+            errorMessage = "ERROR_INVALID_PROFILE_ARB";
+            break;
+          }
+
+          case ERROR_INVALID_VERSION_ARB:
+          {
+            errorMessage = "ERROR_INVALID_VERSION_ARB";
+            break;
+          }
+
+          default:
+          {
+            MessageBox( NULL,
+              FormatUserMessagePassthrough(
+                "Failed to create OpenGL context for window \"%1\": Unknown error %2!lu!",
+                plotTitles[i],
+                errorCode ),
+              NULL, MB_ICONERROR );
+
+            ProgramShouldAbort = true;
+            return;
+          }
+        }
+      }
+
       MessageBox( NULL,
         FormatUserMessagePassthrough(
           "Failed to create OpenGL context for window \"%1\": %2",
           plotTitles[i],
-          FormatSystemMessage() ),
+          errorMessage ),
         NULL, MB_ICONERROR );
 
       ProgramShouldAbort = true;

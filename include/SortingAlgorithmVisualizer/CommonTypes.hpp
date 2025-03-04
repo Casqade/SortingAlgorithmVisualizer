@@ -3,6 +3,9 @@
 #include <SortingAlgorithmVisualizer/fwd.hpp>
 #include <SortingAlgorithmVisualizer/Containers/Array.hpp>
 #include <SortingAlgorithmVisualizer/Containers/RingBuffer.hpp>
+#include <SortingAlgorithmVisualizer/Containers/CallbackStack.hpp>
+
+#include <glad/gl.h>
 
 #include <windows.h>
 
@@ -16,7 +19,7 @@ using ThreadHandle = HANDLE;
 
 
 using RandomizeFunction =
-  void( void* data, size_t elementCount, CRITICAL_SECTION& dataGuard );
+  void( void* data, size_t elementCount );
 
 
 struct RandomizeTask
@@ -26,7 +29,6 @@ struct RandomizeTask
 
   RandomizeFunction* callback {};
 
-  CRITICAL_SECTION* dataGuard {};
   void* data {};
   size_t elementCount {};
 };
@@ -57,14 +59,41 @@ struct ThreadLocalData
 };
 
 
+struct WindowData
+{
+  GladGLContext glContext {};
+
+  HGLRC renderContext {};
+  HDC deviceContext {};
+
+  HWND window {};
+  const char* title {};
+
+  GLuint shaderProgram {};
+  GLuint vertexArray {};
+
+  GLuint valuesBufferId {};
+  GLuint colorsBufferId {};
+
+  GLsync bufferFences[3] {};
+  LONG currentBufferIndex {0};
+
+  CallbackStack deinitStack {};
+};
 
 
-enum class PlotValueColorIndex : uint8_t
+namespace PlotValueColorIndex
+{
+enum PlotValueColorIndex : uint8_t
 {
   Unsorted,
   Sorted,
 
+  SwappedLess,
+  SwappedGreater,
+
   MaxColors,
 };
+} // namespace PlotValueColorIndex
 
-using PlotColors = Array <PlotValueColorIndex>;
+using PlotColors = Array <decltype(PlotValueColorIndex::Sorted)>;

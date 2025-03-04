@@ -31,7 +31,7 @@ Backend::HeapMemoryBudget(
   size_t plotCount )
 {
   return
-    CallbackStackDepth(plotCount) +
+    sizeof(CallbackTask) * CallbackStackDepth(plotCount) +
     sizeof(RandomizeTask*) * plotCount +
     sizeof(ThreadLocalData) * plotCount +
     sizeof(ThreadHandle) * plotCount;

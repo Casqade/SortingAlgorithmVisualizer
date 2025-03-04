@@ -1,7 +1,6 @@
 #include <SortingAlgorithmVisualizer/Allocators/Alignment.hpp>
 
 
-
 bool
 IsValidAlignment(
   size_t alignment )

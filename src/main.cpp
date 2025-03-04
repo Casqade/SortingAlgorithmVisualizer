@@ -1,5 +1,6 @@
 #include <SortingAlgorithmVisualizer/Atomics.hpp>
 #include <SortingAlgorithmVisualizer/Backend.hpp>
+#include <SortingAlgorithmVisualizer/Frontend.hpp>
 #include <SortingAlgorithmVisualizer/CommonTypes.hpp>
 #include <SortingAlgorithmVisualizer/MessageFormatting.hpp>
 #include <SortingAlgorithmVisualizer/Containers/Array.hpp>
@@ -11,23 +12,40 @@ bool ProgramShouldAbort {};
 
 
 int
-main()
+WINAPI
+WinMain(
+  HINSTANCE appInstance,
+  HINSTANCE,
+  LPSTR cmdArgs,
+  int windowShowState )
 {
-  using PlotValueType = uint32_t;
-  using SorterType = MockSorter <PlotValueType>;
-
   const size_t plotCount = 2;
-  const size_t plotValueCount = 1000;
 
-  const size_t callbackStackDepth = 1;
+  using Sorter1Type = MockSorter <float>;
+  using Sorter2Type = MockSorter <int>;
+
+  const size_t plot1ValueCount = 10;
+  const size_t plot2ValueCount = 100;
+
+  const size_t callbackStackDepth = 2;
 
   const auto heapMemoryBudget =
     sizeof(CallbackTask) * callbackStackDepth +
     sizeof(Backend) +
     Backend::HeapMemoryBudget(plotCount) +
-    sizeof(SorterType) * plotCount +
-    SorterType::HeapMemoryBudget(plotValueCount) * plotCount+
-    sizeof(IAllocator*) * 100; // reserved for alignment padding & allocation bookkeeping
+    sizeof(Frontend) +
+    Frontend::HeapMemoryBudget(plotCount) +
+    sizeof(Sorter1Type) +
+    sizeof(Sorter2Type) +
+    Sorter1Type::HeapMemoryBudget(plot1ValueCount) +
+    Sorter2Type::HeapMemoryBudget(plot2ValueCount) +
+
+//    allocation bookkeeping
+    sizeof(IAllocator*) * 9 +
+    sizeof(IAllocator*) * 4 * plotCount +
+
+//    alignment padding
+    200;
 
 
   ArenaAllocator arena {};
@@ -78,37 +96,57 @@ main()
 
   backend->init(plotCount);
 
-  backend->addSorter <MockSorter <int>> (0, 1000);
-  backend->addSorter <MockSorter <int>> (1, 1000);
 
-  backend->start();
-
-
-  for ( size_t frame {}; frame < 1000; ++frame )
+  const char* plotTitles[] =
   {
-    if ( ProgramShouldAbort == true )
-      break;
+    "Plot 1",
+    "Plot 2",
+  };
+
+  backend->addSorter <Sorter1Type> (0, plot1ValueCount);
+  backend->addSorter <Sorter2Type> (1, plot2ValueCount);
 
 
-    for ( size_t i {}; i < plotCount; ++i )
-    {
-      auto sorter = backend->sorter(i);
+  auto frontend = ObjectCreate <Frontend> (arena, arena, *backend);
 
-      if ( sorter->tryLockData() == FALSE )
-        continue;
+  if ( frontend == nullptr )
+  {
+    MessageBox( NULL,
+      "Failed to create Frontend: "
+      "Out of memory budget",
+      NULL, MB_ICONERROR );
 
-//      simulate copying to back buffer
-      Sleep(5);
-
-      sorter->unlockData();
-    }
-
-//    write to vertex buffer
-//    glVertexAttribDivisor + glDrawArraysInstanced
-//    swap
+    return 0;
   }
 
+  deinitStack.push( frontend,
+  [] ( void* data )
+  {
+    ObjectDestroy(
+      static_cast <Frontend*> (data) );
+  } );
+
+
+  frontend->init(plotCount, plotTitles, appInstance);
+
+  for ( size_t i {}; i < plotCount; ++i )
+    frontend->addSorter( i, backend->sorter(i) );
+
+
+  if ( ProgramShouldAbort == false )
+    backend->start();
+
+
+  do
+  {
+    frontend->processMessages();
+    frontend->draw();
+  }
+  while ( ProgramShouldAbort == false );
+
   backend->stop();
+
+  frontend->closeAllWindows();
 
 
   return 0;

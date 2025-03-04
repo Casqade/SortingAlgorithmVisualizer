@@ -27,7 +27,7 @@ public:
   void deinit();
 
   template <class T>
-  void addSorter( size_t plotIndex, size_t plotValueCount );
+  ISorter* addSorter( size_t plotIndex, size_t plotValueCount );
 
   void start();
   void stop();
@@ -58,14 +58,16 @@ private:
 
 
 template <class T>
-inline void
+inline
+ISorter*
 Backend::addSorter(
   size_t plotIndex,
   size_t plotValueCount )
 {
   if ( ProgramShouldAbort == true )
-    return;
+    return nullptr;
 
+  assert(plotValueCount != 0);
   assert(plotIndex < mThreadsData.size());
 
 
@@ -83,7 +85,7 @@ Backend::addSorter(
       NULL, MB_ICONERROR );
 
     ProgramShouldAbort = true;
-    return;
+    return nullptr;
   }
 
   mDeinitStack.push( sorter,
@@ -104,6 +106,8 @@ Backend::addSorter(
       NULL, MB_ICONERROR );
 
     ProgramShouldAbort = true;
-    return;
+    return nullptr;
   }
+
+  return sorter;
 }

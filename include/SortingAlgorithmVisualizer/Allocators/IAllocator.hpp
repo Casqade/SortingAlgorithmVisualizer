@@ -61,6 +61,15 @@ IAllocator::create(
   return objects;
 }
 
+template <typename T, size_t N, typename... Args>
+T*
+IAllocator::create(
+  Args&&... args )
+{
+  return create <T> (
+    N, std::forward <Args> (args)... );
+}
+
 template <typename T>
 void
 IAllocator::destroy(

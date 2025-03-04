@@ -1,16 +1,17 @@
 #include <SortingAlgorithmVisualizer/Sorters/ISorter.hpp>
 #include <SortingAlgorithmVisualizer/Allocators/IAllocator.hpp>
+#include <SortingAlgorithmVisualizer/Atomics.hpp>
 
 #include <windows.h>
+
+#include <cassert>
+#include <cstring>
 
 
 ISorter::ISorter()
 {
-  InitializeCriticalSection(&mDataGuard);
   InitializeCriticalSection(&mRandomizeTask.taskFinishedGuard);
   InitializeConditionVariable(&mRandomizeTask.taskFinished);
-
-  mRandomizeTask.dataGuard = &mDataGuard;
 }
 
 ISorter::~ISorter()
@@ -52,22 +53,95 @@ ISorter::init(
   return true;
 }
 
-BOOL
-ISorter::tryLockData()
+void
+ISorter::swapBuffers()
 {
-  return TryEnterCriticalSection(&mDataGuard);
+  mBackBufferIndex = InterlockedExchangeNoFence(
+    &mFrontBufferIndex,
+    mBackBufferIndex );
+
+  AtomicStoreRelaxed(mBufferWasSwapped, 1);
+}
+
+LONG
+ISorter::acquireBuffer(
+  LONG releasedBufferIndex )
+{
+  if ( InterlockedExchangeNoFence(&mBufferWasSwapped, 0) == 0 )
+    return releasedBufferIndex;
+
+  return InterlockedExchangeAcquire(
+    &mFrontBufferIndex,
+    releasedBufferIndex );
 }
 
 void
-ISorter::lockData()
+ISorter::mapValuesBuffer(
+  void* gpuBuffer )
 {
-  EnterCriticalSection(&mDataGuard);
+  assert(gpuBuffer != nullptr);
+  assert(mValuesBuffer == nullptr);
+
+  mValuesBuffer = gpuBuffer;
 }
 
 void
-ISorter::unlockData()
+ISorter::mapColorsBuffer(
+  void* gpuBuffer )
 {
-  LeaveCriticalSection(&mDataGuard);
+  assert(gpuBuffer != nullptr);
+  assert(mColorsBuffer == nullptr);
+
+  mColorsBuffer = gpuBuffer;
+}
+
+void
+ISorter::flushValues() const
+{
+  auto valuesBufferSize =
+    valueSize() * valueCount();
+
+  auto valuesBufferStart =
+    reinterpret_cast <uintptr_t> (mValuesBuffer)
+    + mBackBufferIndex * valuesBufferSize;
+
+  std::memcpy(
+    reinterpret_cast <void*> (valuesBufferStart),
+    mRandomizeTask.data,
+    valuesBufferSize );
+}
+
+void
+ISorter::flushColors() const
+{
+  using PlotValueColorIndex::PlotValueColorIndex;
+
+  auto colorsBufferSize =
+    sizeof(PlotValueColorIndex) * valueCount();
+
+  auto colorsBufferStart =
+    reinterpret_cast <uintptr_t> (mColorsBuffer)
+    + mBackBufferIndex * colorsBufferSize;
+
+  std::memcpy(
+    reinterpret_cast <void*> (colorsBufferStart),
+    mColors.data(),
+    colorsBufferSize );
+}
+
+void
+ISorter::resetColors()
+{
+  std::memset(
+    mColors.data(),
+    PlotValueColorIndex::Unsorted,
+    mColors.size() );
+}
+
+size_t
+ISorter::valueCount() const
+{
+  return mColors.size();
 }
 
 RandomizeTask&
@@ -81,5 +155,7 @@ size_t
 ISorter::HeapMemoryBudget(
   size_t valueCount )
 {
+  using PlotValueColorIndex::PlotValueColorIndex;
+
   return sizeof(PlotValueColorIndex) * valueCount;
 }

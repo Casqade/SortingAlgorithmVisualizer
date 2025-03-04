@@ -77,7 +77,8 @@ SorterThreadProc(
     LeaveCriticalSection(&randomizerData.tasksAvailableGuard);
     WakeConditionVariable(&randomizerData.tasksAvailable);
 
-//    TOOD: reset plot colors
+    sorter->reset();
+    isSorted = false;
 
     EnterCriticalSection(&newTask.taskFinishedGuard);
 
@@ -101,9 +102,6 @@ SorterThreadProc(
     }
 
     LeaveCriticalSection(&newTask.taskFinishedGuard);
-
-    sorter->reset();
-    isSorted = false;
   }
 
   return 0;
@@ -159,8 +157,7 @@ RandomizerThreadProc(
     {
       task->callback(
         task->data,
-        task->elementCount,
-        *task->dataGuard );
+        task->elementCount );
 
       EnterCriticalSection(&task->taskFinishedGuard);
         task->callback = nullptr; // mark task as done

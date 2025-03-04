@@ -32,13 +32,31 @@ public:
     }
 
     for ( size_t i {}; i < valueCount; ++i )
-      mValues[i] = i;
+      mValues[i] = i + 1;
 
     mRandomizeTask.data = mValues.data();
     mRandomizeTask.elementCount = valueCount;
 
     return ISorter::init(valueCount, allocator);
   }
+
+  inline void initValue( void* valueAddress, size_t value ) const override
+  {
+    T convertedValue = value;
+
+    std::memcpy(
+      valueAddress,
+      &convertedValue,
+      sizeof(T) );
+  }
+
+  inline size_t valueSize() const override
+  {
+    return sizeof(T);
+  }
+
+  GLenum valueType() const override;
+
 
   inline static size_t HeapMemoryBudget( size_t valueCount )
   {
@@ -51,10 +69,61 @@ public:
 protected:
   inline RandomizeFunction* getRandomizeCallback() const override
   {
-    return RandomizePlotDataShuffle <T>;
+    return RandomizePlotDataRdtsc <T>;
   }
 
 
 protected:
   Array <T> mValues {};
 };
+
+
+template <>
+inline GLenum
+ISorterSpecialized <uint8_t>::valueType() const
+{
+  return GL_UNSIGNED_BYTE;
+}
+
+template <>
+inline GLenum
+ISorterSpecialized <uint16_t>::valueType() const
+{
+  return GL_UNSIGNED_SHORT;
+}
+
+template <>
+inline GLenum
+ISorterSpecialized <uint32_t>::valueType() const
+{
+  return GL_UNSIGNED_INT;
+}
+
+template <>
+inline GLenum
+ISorterSpecialized <int8_t>::valueType() const
+{
+  return GL_BYTE;
+}
+
+template <>
+inline GLenum
+ISorterSpecialized <int16_t>::valueType() const
+{
+  return GL_SHORT;
+}
+
+template <>
+inline GLenum
+ISorterSpecialized <int32_t>::valueType() const
+{
+  return GL_INT;
+}
+
+template <>
+inline GLenum
+ISorterSpecialized <float>::valueType() const
+{
+  return GL_FLOAT;
+}
+

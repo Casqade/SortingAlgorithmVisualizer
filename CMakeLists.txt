@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 cmake_policy(SET CMP0091 NEW)
 
 set(TARGET SortingAlgorithmVisualizer)
-project(${TARGET} VERSION 1.0 LANGUAGES CXX)
+project(${TARGET} VERSION 1.0 LANGUAGES C CXX)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 
-add_executable(${TARGET})
+add_executable(${TARGET} WIN32)
 target_sources(${TARGET} PRIVATE
   src/main.cpp
 
@@ -20,11 +20,14 @@ target_sources(${TARGET} PRIVATE
 
   src/Backend.cpp
   src/Backend_threads.cpp
+  src/Frontend.cpp
 
   src/ISorter.cpp
   src/TimePoint.cpp
-  src/Randomization.cpp
   src/MessageFormatting.cpp
+
+  src/glad/glad.c
+  src/glad/wgl.c
 )
 
 
@@ -33,6 +36,11 @@ if(${BUILD_SHARED_LIBS})
 else()
   set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 endif()
+
+
+target_compile_definitions(${TARGET} PUBLIC
+  WIN32_LEAN_AND_MEAN
+)
 
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -70,10 +78,10 @@ else()
 endif()
 
 
-find_package(Threads REQUIRED)
+find_package(OpenGL REQUIRED)
 
 target_link_libraries(${TARGET} PUBLIC
-  Threads::Threads
+  OpenGL::GL
 )
 
 

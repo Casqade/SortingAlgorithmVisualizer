@@ -17,10 +17,20 @@ public:
 
   virtual bool step() = 0;
   virtual void reset() = 0;
+  virtual void resetColors();
 
-  BOOL tryLockData();
-  void lockData();
-  void unlockData();
+  void mapValuesBuffer( void* gpuBuffer );
+  void mapColorsBuffer( void* gpuBuffer );
+
+  LONG acquireBuffer( LONG bufferIndex );
+
+
+  virtual void initValue( void* address, size_t value ) const = 0;
+
+  virtual size_t valueSize() const = 0;
+  virtual GLenum valueType() const = 0;
+
+  size_t valueCount() const;
 
   RandomizeTask& getRandomizeTask();
 
@@ -31,10 +41,21 @@ protected:
   virtual size_t instanceSize() const = 0;
   virtual RandomizeFunction* getRandomizeCallback() const = 0;
 
+  void swapBuffers();
+  void flushValues() const;
+  void flushColors() const;
+
 
 protected:
   CRITICAL_SECTION mDataGuard {};
   RandomizeTask mRandomizeTask {};
+
+  void* mValuesBuffer {};
+  void* mColorsBuffer {};
+
+  LONG mFrontBufferIndex {1};
+  LONG mBackBufferIndex {2};
+  LONG mBufferWasSwapped {};
 
   PlotColors mColors {};
 };

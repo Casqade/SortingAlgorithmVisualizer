@@ -92,6 +92,8 @@ enum PlotValueColorIndex : uint8_t
   SwappedLess,
   SwappedGreater,
 
+  BubbleSortCaret,
+
   MaxColors,
 };
 } // namespace PlotValueColorIndex

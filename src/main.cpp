@@ -5,6 +5,7 @@
 #include <SortingAlgorithmVisualizer/MessageFormatting.hpp>
 #include <SortingAlgorithmVisualizer/Containers/Array.hpp>
 #include <SortingAlgorithmVisualizer/Sorters/MockSorter.hpp>
+#include <SortingAlgorithmVisualizer/Sorters/BubbleSorter.hpp>
 #include <SortingAlgorithmVisualizer/Allocators/ArenaAllocator.hpp>
 
 
@@ -21,8 +22,14 @@ WinMain(
 {
   const size_t plotCount = 2;
 
+  const char* plotTitles[] =
+  {
+    "Pseudo sort (PLACEHOLDER)",
+    "Bubble sort",
+  };
+
   using Sorter1Type = MockSorter <float>;
-  using Sorter2Type = MockSorter <int>;
+  using Sorter2Type = BubbleSorter <int>;
 
   const size_t plot1ValueCount = 10;
   const size_t plot2ValueCount = 100;
@@ -95,13 +102,6 @@ WinMain(
 
 
   backend->init(plotCount);
-
-
-  const char* plotTitles[] =
-  {
-    "Plot 1",
-    "Plot 2",
-  };
 
   backend->addSorter <Sorter1Type> (0, plot1ValueCount);
   backend->addSorter <Sorter2Type> (1, plot2ValueCount);

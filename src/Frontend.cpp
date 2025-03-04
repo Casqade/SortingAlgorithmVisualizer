@@ -24,7 +24,7 @@ layout(location = 1) in uint colorIndex;
 layout(location = 0) flat out vec3 outColor;
 
 
-const vec3 ColorPalette[4] =
+const vec3 ColorPalette[5] =
 {
 
 //  unsorted
@@ -37,6 +37,9 @@ const vec3 ColorPalette[4] =
   {0, 0, 1},
 
 //  swapped greater
+  {1, 0, 0},
+
+//  bubble sort caret
   {1, 0, 0},
 };
 

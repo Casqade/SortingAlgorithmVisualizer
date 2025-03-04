@@ -46,8 +46,9 @@ const vec3 ColorPalette[5] =
 
 void main()
 {
-  float columnSpacingRatio = 0.25;
-  float columnWidth = (1 - columnSpacingRatio) / maxValue;
+  float columnWidthToSpacingRatio = 0.75;
+  float columnWidth = 2 * columnWidthToSpacingRatio / maxValue;
+  float columnSpacing = 2 * (1 - columnWidthToSpacingRatio) / maxValue;
   float columnHeight = 2 * value / maxValue;
 
   vec2 vertices[4] = {
@@ -59,7 +60,8 @@ void main()
 
 
   float columnX =
-    -1 + 2 * (gl_InstanceID + columnSpacingRatio) / maxValue;
+    -1 + 0.5 * columnSpacing +
+    2 * gl_InstanceID / maxValue;
 
   vec2 vertex =
     vertices[gl_VertexID] +

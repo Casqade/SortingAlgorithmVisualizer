@@ -156,18 +156,21 @@ Backend::setThreadAffinities()
   auto nextEvenCoreIndex =
   [] ( auto& coreIndex, auto& affinityMask ) -> bool
   {
+    auto hasBit = _BitScanForward64(
+      &coreIndex, affinityMask );
+
     while ( coreIndex % 2 != 0 )
     {
       affinityMask &= ~(1 << coreIndex);
 
-      auto hasBit = _BitScanForward64(
+      hasBit = _BitScanForward64(
         &coreIndex, affinityMask );
 
       if ( hasBit == FALSE )
         return false;
     }
 
-    return true;
+    return hasBit;
   };
 
 

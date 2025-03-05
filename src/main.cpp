@@ -29,19 +29,19 @@ WinMain(
   {
     "Bubble sort",
     "Cocktail sort",
-    "Insertion sort",
     "Selection sort",
+    "Insertion sort",
   };
 
-  using Sorter1Type = BubbleSorter <int>;
-  using Sorter2Type = CocktailSorter <int>;
-  using Sorter3Type = InsertionSorter <int>;
-  using Sorter4Type = SelectionSorter <int>;
+  using Sorter1Type = BubbleSorter <int8_t>;
+  using Sorter2Type = CocktailSorter <int16_t>;
+  using Sorter3Type = SelectionSorter <int32_t>;
+  using Sorter4Type = InsertionSorter <float>;
 
   const size_t plot1ValueCount = 20;
   const size_t plot2ValueCount = 20;
-  const size_t plot3ValueCount = 20;
-  const size_t plot4ValueCount = 20;
+  const size_t plot3ValueCount = 30;
+  const size_t plot4ValueCount = 40;
 
   const size_t callbackStackDepth = 2;
 

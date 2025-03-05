@@ -72,6 +72,7 @@ Backend::addSorter(
 
 
   auto& sorter = mThreadsData[plotIndex].sorter;
+  assert(sorter == nullptr);
 
   sorter = ObjectCreate <T> (mAllocator);
 

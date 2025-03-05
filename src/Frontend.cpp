@@ -759,6 +759,8 @@ Frontend::addSorter(
   auto& valuesBufferId = windowData.valuesBufferId;
   auto& colorsBufferId = windowData.colorsBufferId;
 
+  assert(vertexArray == 0);
+
   wglMakeCurrent(
     windowData.deviceContext,
     windowData.renderContext );

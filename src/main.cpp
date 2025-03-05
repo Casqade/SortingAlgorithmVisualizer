@@ -156,6 +156,7 @@ WinMain(
   {
     frontend->processMessages();
     frontend->draw();
+    ::Sleep(2);
   }
   while ( ProgramShouldAbort == false );
 

@@ -25,7 +25,7 @@ public:
   {
     using PlotValueColorIndex::PlotValueColorIndex;
 
-    if ( this->mValues.size() == 0 )
+    if ( this->mValues.size() < 2 )
       return true;
 
 

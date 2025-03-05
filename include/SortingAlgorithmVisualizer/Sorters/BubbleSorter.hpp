@@ -29,7 +29,7 @@ public:
   {
     using PlotColor = PlotValueColorIndex::PlotValueColorIndex;
 
-    if ( this->mValues.size() <= 1 )
+    if ( this->mValues.size() < 2 )
       return true;
 
 
@@ -57,7 +57,7 @@ public:
       colors[rhsIndex] = PlotColor::SwappedGreater;
     }
     else
-      colors[rhsIndex] = PlotColor::BubbleSortCaret;
+      colors[rhsIndex] = PlotColor::Caret;
 
 
     if ( ++mIndex + 1 == mSortedIndex )

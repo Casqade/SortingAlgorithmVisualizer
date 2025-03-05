@@ -39,8 +39,8 @@ const vec3 ColorPalette[5] =
 //  swapped greater
   {1, 0, 0},
 
-//  bubble sort caret
-  {1, 0, 0},
+//  caret
+  {1, 0, 1},
 };
 
 

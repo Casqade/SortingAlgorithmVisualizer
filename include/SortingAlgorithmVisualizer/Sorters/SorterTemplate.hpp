@@ -4,11 +4,11 @@
 
 
 template <typename T>
-class BubbleSorter : public ISorterSpecialized <T>
+class SorterTemplate : public ISorterSpecialized <T>
 {
 public:
-  BubbleSorter() = default;
-  ~BubbleSorter() override = default;
+  SorterTemplate() = default;
+  ~SorterTemplate() override = default;
 
 
   inline void reset() override
@@ -18,9 +18,9 @@ public:
 
   inline bool step() override
   {
-    using PlotValueColorIndex::PlotValueColorIndex;
+    using PlotColor = PlotValueColorIndex::PlotValueColorIndex;
 
-    if ( this->mValues.size() == 0 )
+    if ( this->mValues.size() < 2 )
       return true;
 
 
@@ -35,8 +35,8 @@ public:
     {
       std::memset(
         colors.data(),
-        PlotValueColorIndex::Sorted,
-        sizeof(PlotValueColorIndex) * colors.size() );
+        PlotColor::Sorted,
+        colors.size() );
     }
 
 

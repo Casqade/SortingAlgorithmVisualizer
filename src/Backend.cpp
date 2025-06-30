@@ -207,7 +207,7 @@ Backend::setThreadAffinities()
   if ( nextEvenCoreIndex(coreIndex, processAffinity) == false )
   {
     MessageBox( NULL,
-      "Failed to set affinity for randomizer thread: "
+      "Failed to set affinity for randomizer and sorters threads: "
       "Process affinity mask is too restrictive or this "
       "machine has insufficient number of available CPU cores",
       NULL, MB_ICONWARNING );

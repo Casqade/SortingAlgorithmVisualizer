@@ -37,17 +37,16 @@ SorterThreadProc(
 
     auto currentTime = TimePoint::Now();
 
-    auto sleepTime =
+    auto wakeUpTime =
       isSorted == true
       ? currentTime + SortedPlotPresentTime
       : currentTime + SortingStepPresentTime;
 
-    do
+    while ( TimePoint::Now() < wakeUpTime &&
+            AtomicLoadRelaxed(sharedState.shutdownRequested) == FALSE )
     {
       ::Sleep(1);
-
-    } while ( TimePoint::Now() < sleepTime &&
-              AtomicLoadRelaxed(sharedState.shutdownRequested) == FALSE );
+    }
 
 
     if ( isSorted == false )

@@ -53,6 +53,7 @@ jobs:
     - name: Install Ninja
       run: |
         choco install ninja
+        choco upgrade llvm
       shell: bash
 
     - name: Configure CMake
